@@ -97,7 +97,7 @@ class Modeler:
                      NumRunDirs=4, 
                      TelluricModelingDirRoot=os.environ["TELLURICMODELING"], 
                      nmolecules=12):
-
+    
     Atmosphere = defaultdict(list)
     indices = {}
     self.debug = debug
@@ -336,14 +336,14 @@ class Modeler:
     if (highfreq - lowfreq > maxdiff):
       while lowfreq + maxdiff <= highfreq:
         parameters[18] = lowfreq + maxdiff
-
+        
         MakeTape5.WriteTape5(parameters, output=TelluricModelingDir + "TAPE5", atmosphere=Atmosphere)
 
         #Run lblrtm
         cmd = "cd " + TelluricModelingDir + ";sh runlblrtm_v3.sh"
         try:
           command = subprocess.check_call(cmd, shell=True)
-        except CalledProcessError:
+        except subprocess.CalledProcessError:
           print "Error: Command '%s' failed in directory %s" %(cmd, TelluricModelingDir)
           sys.exit()
 
@@ -358,7 +358,7 @@ class Modeler:
     cmd = "cd " + TelluricModelingDir + ";sh runlblrtm_v3.sh"
     try:
       command = subprocess.check_call(cmd, shell=True)
-    except CalledProcessError:
+    except subprocess.CalledProcessError:
       print "Error: Command '%s' failed in directory %s" %(cmd, TelluricModelingDir)
       sys.exit()
 
@@ -582,7 +582,7 @@ if __name__ == "__main__":
   highwave = 900
   lowfreq = 1e7/highwave
   highfreq = 1e7/lowwave
-  modeler = Modeler(debug=True)
+  modeler = Modeler(debug=False)
   modeler.MakeModel(pressure=pressure, temperature=temperature, humidity=humidity, lowfreq=lowfreq, highfreq=highfreq, angle=angle, o2=o2, alt=2.1, save=True)
           
 
