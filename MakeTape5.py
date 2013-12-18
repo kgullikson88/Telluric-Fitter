@@ -315,10 +315,10 @@ def WriteTape5(pars, atmosphere=None, output="TAPE5"):
       done = False
       while not done:
         outfile.write(writer("(%iE15.8)" %(end-start)).write(abundances[start:end]) + '\n')
-	start = end
-	end = min(start+8, nmol)
-	if start == end:
-	  done = True
+        start = end
+        end = min(start+8, nmol)
+        if start == end:
+          done = True
 
 
   #Finish the file
