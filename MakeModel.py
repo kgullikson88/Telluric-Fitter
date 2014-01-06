@@ -8,20 +8,20 @@
       'if __name__ == "__main__":')
 
 
-    This file is part of the TelluricFitter program.
+    This file is part of the TelFit program.
 
-    TelluricFitter is free software: you can redistribute it and/or modify
+    TelFit is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    TelluricFitter is distributed in the hope that it will be useful,
+    TelFit is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with TelluricFitter.  If not, see <http://www.gnu.org/licenses/>.
+    along with TelFit.  If not, see <http://www.gnu.org/licenses/>.
 
 
 """
@@ -42,6 +42,7 @@ import lockfile
 import struct
 from pysynphot.observation import Observation
 from pysynphot.spectrum import ArraySourceSpectrum, ArraySpectralElement
+import FittingUtilities
 
 
 
@@ -129,6 +130,7 @@ class Modeler:
             molecule = line.split("*")[-1].split()[0]
             indices[molecule] = i
     infile.close()
+    
     #Determine the number of lines that follow each header
     levelsperline = 5.0
     linespersection = int(numlevels/levelsperline + 0.9)
@@ -235,7 +237,9 @@ class Modeler:
     
 
 
-    
+  """
+    Release the lock on the directory.
+  """
   def Cleanup(self):
     lock = self.lock
     #Unlock directory
@@ -246,7 +250,10 @@ class Modeler:
     return
 
 
-
+  """
+    Find a run directory to work in. This is necessary so that you
+      can run several instances of MakeModel (or TelFit) at once.
+  """
   def FindWorkingDirectory(self):
     #Determine output filename
     TelluricModelingDirRoot = self.TelluricModelingDirRoot
@@ -273,7 +280,20 @@ class Modeler:
     self.lock = lock
 
   
-
+  """
+    Here is the important function! All of the variables have default values, 
+      which you will want to override for any realistic use.
+    Units:
+      Pressure: hPa
+      Temperature: Kelvin
+      lowfreq, highfreq: wavenumber (cm^-1)
+      angle: degrees (it is the zenith angle of the telescope)
+      humidity: percent
+      co2 - hno3 abundances: ppmv concentration
+      lat: degrees (it is the latitude of the observatory)
+      alt: km (it is the altitude of the observatory above sea level)
+      
+  """
   def MakeModel(self, pressure=795.0, temperature=283.0, lowfreq=4000, highfreq=4600, angle=45.0, humidity=50.0, co2=368.5, o3=3.9e-2, n2o=0.32, co=0.14, ch4=1.8, o2=2.1e5, no=1.1e-19, so2=1e-4, no2=1e-4, nh3=1e-4, hno3=5.6e-4, lat=30.6, alt=2.1, wavegrid=None, resolution=None, save=False, libfile=None):
 
     self.FindWorkingDirectory()
@@ -332,6 +352,8 @@ class Modeler:
     parameters[51] = "%.5f" %angle
     parameters[17] = lowfreq
     freq, transmission = numpy.array([]), numpy.array([])
+
+    #Need to run lblrtm several times if the wavelength range is too large.
     maxdiff = 1999.9
     if (highfreq - lowfreq > maxdiff):
       while lowfreq + maxdiff <= highfreq:
@@ -347,6 +369,7 @@ class Modeler:
           print "Error: Command '%s' failed in directory %s" %(cmd, TelluricModelingDir)
           sys.exit()
 
+        #Read in TAPE12, which is the output of LBLRTM
         freq, transmission = self.ReadTAPE12(TelluricModelingDir, appendto=(freq, transmission))
         lowfreq = lowfreq + 2000.00001
         parameters[17] = lowfreq
@@ -354,7 +377,7 @@ class Modeler:
     parameters[18] = highfreq
     MakeTape5.WriteTape5(parameters, output=TelluricModelingDir + "TAPE5", atmosphere=Atmosphere)
 
-    #Run lblrtm
+    #Run lblrtm for the last time
     cmd = "cd " + TelluricModelingDir + ";sh runlblrtm_v3.sh"
     try:
       command = subprocess.check_call(cmd, shell=True)
@@ -362,6 +385,7 @@ class Modeler:
       print "Error: Command '%s' failed in directory %s" %(cmd, TelluricModelingDir)
       sys.exit()
 
+    #Read in TAPE12, which is the output of LBLRTM
     freq, transmission = self.ReadTAPE12(TelluricModelingDir, appendto=(freq, transmission))
 
     #Convert from frequency to wavelength units
@@ -385,31 +409,17 @@ class Modeler:
     self.Cleanup()   #Un-lock the working directory
 
     if wavegrid != None:
-      #Interpolate model to a constant wavelength grid
-      #For now, just interpolate to the right spacing
-      #Also, only keep the section near the chip wavelengths
-      wavelength = wavelength[::-1]
-      transmission = transmission[::-1]
-      xspacing = (wavelength[-1] - wavelength[0])/float(wavelength.size-1)
-      tol = 10  #Go 10 nm on either side of the chip
-      left = numpy.searchsorted(wavelength, wavegrid[0]-tol)
-      right = numpy.searchsorted(wavelength, wavegrid[-1]+tol)
-      right = min(right, wavelength.size-1)
-
-      Model = scipy.interpolate.UnivariateSpline(wavelength, transmission, s=0)
-      model = DataStructures.xypoint(right-left+1)
-      model.x = numpy.arange(wavelength[left], wavelength[right], xspacing)
-      model.y = Model(model.x)
-      model.cont = numpy.ones(model.x.size)
-
-      return model
+      model = DataStructures.xypoint(x=wavelength[::-1], y=transmission[::-1])
+      return FittingUtilities.RebinData(model, wavegrid)
 
     return DataStructures.xypoint(x=wavelength[::-1], y=transmission[::-1])
 
 
   """
   Here is a function to read in the binary output of lblrtm, and convert
-    it into arrays of frequency and transmission
+    it into arrays of frequency and transmission. 
+  Warning! Some values are hard-coded in for single precision calculations.
+    You MUST compile lblrtm as single precision or this won't work!
   """
   def ReadTAPE12(self, directory, filename="TAPE12_ex", appendto=None):
     debug = self.debug
@@ -419,7 +429,7 @@ class Modeler:
     content = infile.read()
     infile.close()
 
-    offset = 1068   #WHY?!
+    offset = 1068   
     size = struct.calcsize('=ddfl')
     pv1,pv2,pdv,np = struct.unpack('=ddfl', content[offset:offset+size])
     v1 = pv1
@@ -438,7 +448,7 @@ class Modeler:
       npts += np
       junk = [spectrum.append(temp2[i]) for i in range(np)]
       
-      offset += size + 8  #WHERE DOES 8 COME FROM?
+      offset += size + 8  
       size = struct.calcsize('=ddfl')
       if len(content) > offset + size:
         pv1,pv2,pdv,np = struct.unpack('=ddfl', content[offset:offset+size])
@@ -464,104 +474,6 @@ class Modeler:
     return v, spectrum
 
 
-
-  
-"""
-The following functions are useful for the actual telluric modeling.
-They are not used to actually create a telluric absorption spectrum.
-"""
-
-#This function rebins (x,y) data onto the grid given by the array xgrid
-#  It is designed to rebin to a courser wavelength grid, but can also
-#  interpolate to a finer grid
-def RebinData(data,xgrid, synphot=True):
-  if synphot:
-    newdata = DataStructures.xypoint(x=xgrid)
-    newdata.y = rebin_spec(data.x, data.y, xgrid)
-    newdata.cont = rebin_spec(data.x, data.cont, xgrid)
-    newdata.y[0] = data.y[0]
-    newdata.y[-1] = data.y[-1]
-    return newdata
-  else:
-    data_spacing = data.x[1] - data.x[0]
-    grid_spacing = xgrid[1] - xgrid[0]
-    newdata = DataStructures.xypoint(x=xgrid)
-    if grid_spacing < 2.0*data_spacing:
-      Model = scipy.interpolate.UnivariateSpline(data.x, data.y, s=0)
-      Continuum = scipy.interpolate.UnivariateSpline(data.x, data.cont, s=0)
-      newdata.y = Model(newdata.x)
-      newdata.cont = Continuum(newdata.x)
-
-    else:
-      left = numpy.searchsorted(data.x, (3*xgrid[0]-xgrid[1])/2.0)
-      for i in range(xgrid.size-1):
-        right = numpy.searchsorted(data.x, (xgrid[i]+xgrid[i+1])/2.0)
-        newdata.y[i] = numpy.mean(data.y[left:right])
-        newdata.cont[i] = numpy.mean(data.cont[left:right])
-        left = right
-      right = numpy.searchsorted(data.x, (3*xgrid[-1]-xgrid[-2])/2.0)
-      newdata.y[xgrid.size-1] = numpy.mean(data.y[left:right])
-  
-    return newdata
-
-
-
-def rebin_spec(wave, specin, wavnew):
-  
-  spec = ArraySourceSpectrum(wave=wave, flux=specin)
-  f = numpy.ones(len(wave))
-  filt = ArraySpectralElement(wave, f)
-  obs = Observation(spec, filt, binset=wavnew, force='taper')
-  
-  return obs.binflux
-
-
-#This function reduces the resolution by convolving with a gaussian kernel
-def ReduceResolution(data,resolution, cont_fcn=None, extend=True):
-  centralwavelength = (data.x[0] + data.x[-1])/2.0
-  xspacing = data.x[1] - data.x[0]   #NOTE: this assumes constant x spacing!
-  FWHM = centralwavelength/resolution;
-  sigma = FWHM/(2.0*numpy.sqrt(2.0*numpy.log(2.0)))
-  left = 0
-  right = numpy.searchsorted(data.x, 10*sigma)
-  x = numpy.arange(0,10*sigma, xspacing)
-  gaussian = numpy.exp(-(x-5*sigma)**2/(2*sigma**2))
-  if extend:
-    #Extend array to try to remove edge effects (do so circularly)
-    before = data.y[-gaussian.size/2+1:]
-    after = data.y[:gaussian.size/2]
-    #extended = numpy.append(numpy.append(before, data.y), after)
-    extended = numpy.r_[before, data.y, after]
-
-    first = data.x[0] - float(int(gaussian.size/2.0+0.5))*xspacing
-    last = data.x[-1] + float(int(gaussian.size/2.0+0.5))*xspacing
-    x2 = numpy.linspace(first, last, extended.size) 
-    
-    conv_mode = "valid"
-
-  else:
-    extended = data.y.copy()
-    x2 = data.x.copy()
-    conv_mode = "same"
-
-  newdata = data.copy()
-  if cont_fcn != None:
-    cont1 = cont_fcn(newdata.x)
-    cont2 = cont_fcn(x2)
-    cont1[cont1 < 0.01] = 1
-  
-    newdata.y = fftconvolve(extended*cont2, gaussian/gaussian.sum(), mode=conv_mode)/cont1
-
-  else:
-    newdata.y = fftconvolve(extended, gaussian/gaussian.sum(), mode=conv_mode)
-    
-  return newdata
-
-#Just a convenince fcn which combines the above two
-def ReduceResolutionAndRebinData(data,resolution,xgrid):
-  data = ReduceResolution(data,resolution)
-  return RebinData(data,xgrid)
-  
   
 
 

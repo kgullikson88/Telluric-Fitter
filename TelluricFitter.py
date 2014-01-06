@@ -48,7 +48,7 @@ Usage:
 """
 
 
-import pylab
+import matplotlib.pyplot as plt
 import numpy
 import sys
 import os
@@ -654,9 +654,9 @@ class TelluricFitter:
       residuals = waves - fit(data.x[pixels]-mean)
       std = numpy.std(residuals)
       mean = numpy.mean(residuals)
-      pylab.plot(pixels, residuals, 'ro')
+      plt.plot(pixels, residuals, 'ro')
       print std, mean
-      pylab.show()
+      plt.show()
       for i in range(len(waves)-1, -1, -1):
         if numpy.abs((residuals[i] - mean)/std) > 2:
           done = False
@@ -665,15 +665,15 @@ class TelluricFitter:
       print done, len(waves), fitorder
     if self.debug and self.debug_level >= 4:
       print "Residual standard deviation = %g" %numpy.std(waves - fit(data.x[pixels]-mean))
-      pylab.plot(data.x[pixels], waves - fit(data.x[pixels]-mean), 'ro')
-      pylab.title("Residuals from wavelength fit")
-      pylab.xlabel("Old Wavelength (nm)")
-      pylab.ylabel("Fit - Points (nm)")
-      pylab.figure(2)
-      pylab.plot(data_original.x, data_original.y/data_original.cont)
-      pylab.plot(telluric.x, telluric.y)
-      pylab.plot(fit(telluric.x-mean), telluric.y)
-      pylab.show()
+      plt.plot(data.x[pixels], waves - fit(data.x[pixels]-mean), 'ro')
+      plt.title("Residuals from wavelength fit")
+      plt.xlabel("Old Wavelength (nm)")
+      plt.ylabel("Fit - Points (nm)")
+      plt.figure(2)
+      plt.plot(data_original.x, data_original.y/data_original.cont)
+      plt.plot(telluric.x, telluric.y)
+      plt.plot(fit(telluric.x-mean), telluric.y)
+      plt.show()
     return fit, mean
     
 
@@ -755,10 +755,10 @@ class TelluricFitter:
         if self.debug and self.debug_level >= 3:
           print argdata.x[0], argdata.x[-1], argdata.x.size
           print "wave: ", mean, "\tshift: ", shift, "\tsuccess = ", success
-          pylab.figure(1)
-          pylab.plot(model.x[left:right]-shift, model.y[left:right])
-          pylab.plot(argmodel.x, argmodel.y)
-          pylab.plot(argdata.x, argdata.y)
+          plt.figure(1)
+          plt.plot(model.x[left:right]-shift, model.y[left:right])
+          plt.plot(argmodel.x, argmodel.y)
+          plt.plot(argdata.x, argdata.y)
         if (success < 5):
           old.append(mean)
           if self.adjust_wave == "data":
@@ -768,11 +768,11 @@ class TelluricFitter:
           else:
             sys.exit("Error! adjust_wave set to an invalid value: %s" %self.adjust_wave)
     if self.debug and self.debug_level >= 3:
-      pylab.figure(2)
-      pylab.plot(old, new, 'ro')
-      pylab.title("Fitted Line shifts")
-      pylab.xlabel("Old Wavelength")
-      pylab.ylabel("New Wavelength")
+      plt.figure(2)
+      plt.plot(old, new, 'ro')
+      plt.title("Fitted Line shifts")
+      plt.xlabel("Old Wavelength")
+      plt.ylabel("New Wavelength")
 
     print "Found %i lines in this order" %numlines
     fit = lambda x: x
@@ -808,16 +808,16 @@ class TelluricFitter:
         del new[badindex]
         done = False
     if self.debug and self.debug_level >= 3:
-      pylab.figure(3)
-      pylab.plot(old, fit(old - mean) - new, 'ro')
-      pylab.title("Residuals")
-      pylab.xlabel("Wavelength")
-      pylab.ylabel("Delta-lambda")
-      pylab.figure(4)
-      pylab.plot(data_original.x, data_original.y/data_original.cont)
-      pylab.plot(telluric.x, telluric.y)
-      pylab.plot(fit(telluric.x-mean), telluric.y)
-      pylab.show()
+      plt.figure(3)
+      plt.plot(old, fit(old - mean) - new, 'ro')
+      plt.title("Residuals")
+      plt.xlabel("Wavelength")
+      plt.ylabel("Delta-lambda")
+      plt.figure(4)
+      plt.plot(data_original.x, data_original.y/data_original.cont)
+      plt.plot(telluric.x, telluric.y)
+      plt.plot(fit(telluric.x-mean), telluric.y)
+      plt.show()
     return fit, mean
 
 
@@ -1002,9 +1002,6 @@ class TelluricFitter:
     print "Approximate resolution = %g" %resolution
     
     x2 = numpy.arange(Broadening.size)
-    #pylab.plot(x2, Broadening)
-    #pylab.plot(x2, self.GaussianFitFunction(x2, params))
-    #pylab.show()
 
     if full_output:
       return MakeModel.RebinData(model, data.x), [Broadening, xnew]
