@@ -1,22 +1,24 @@
 """
-    A set of useful functions that I use often while fitting
+    A set of useful functions that I use often while fitting. Most, but not all,
+      of these functions are used in the TelFit program. Note that this is
+      Cython code, which needs to be compiled!
 
 
     
-    This file is part of the TelluricFitter program.
+    This file is part of the TelFit program.
 
-    TelluricFitter is free software: you can redistribute it and/or modify
+    TelFit is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    TelluricFitter is distributed in the hope that it will be useful,
+    TelFit is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with TelluricFitter.  If not, see <http://www.gnu.org/licenses/>.
+    along with TelFit.  If not, see <http://www.gnu.org/licenses/>.
 """
 import numpy
 from scipy.interpolate import InterpolatedUnivariateSpline as spline
@@ -45,9 +47,12 @@ bound  = lambda p, x: lbound(p[0],x) + ubound(p[1],x)
 fixed  = lambda p, x: bound((p,p), x)
 
 
-#CCImprove
+
 """
   Improve the wavelength solution by a constant shift
+  if be_safe: it will not allow the solution to change by more than tol
+  tol: the largest allowable shift (in nm), if be_safe == True
+  
 """
 def CCImprove(data, model, be_safe=True, tol=0.2, debug=False):
   correction = data.y.size + float(numpy.searchsorted(model.x, data.x[0]))/2.0 - 1
@@ -75,8 +80,9 @@ def CCImprove(data, model, be_safe=True, tol=0.2, debug=False):
 
 """
   This function fits the continuum spectrum by iteratively removing
-points over one standard deviation below the mean, which are assumed
-to be absorption lines.
+points too far from the mean. The defaults work well for removing telluric lines.
+
+  Note: Only the 'poly' function has been tested! Change to spline with extreme caution!
 """
 def Continuum(x, y, fitorder=3, lowreject=2, highreject=4, numiter=10000, function="poly"):
   done = False
@@ -104,10 +110,8 @@ def Continuum(x, y, fitorder=3, lowreject=2, highreject=4, numiter=10000, functi
 
 
 
-
-#Smoothing function
-def savitzky_golay(y, window_size, order, deriv=0, rate=1):
-    r"""Smooth (and optionally differentiate) data with a Savitzky-Golay filter.
+"""
+    Smooth (and optionally differentiate) data with a Savitzky-Golay filter.
     The Savitzky-Golay filter removes high frequency noise from data.
     It has the advantage of preserving the original shape and
     features of the signal better than other types of filtering
@@ -153,7 +157,9 @@ def savitzky_golay(y, window_size, order, deriv=0, rate=1):
     .. [2] Numerical Recipes 3rd Edition: The Art of Scientific Computing
        W.H. Press, S.A. Teukolsky, W.T. Vetterling, B.P. Flannery
        Cambridge University Press ISBN-13: 9780521880688
-    """
+"""
+def savitzky_golay(y, window_size, order, deriv=0, rate=1):
+    
     import numpy as np
     from math import factorial
 
@@ -179,7 +185,9 @@ def savitzky_golay(y, window_size, order, deriv=0, rate=1):
     return np.convolve( m[::-1]/m.sum(), y, mode='valid')
 
 
-#Iterative version of the savitzky-golay smoothing function
+"""
+  Iterative version of the savitzky-golay smoothing function
+"""
 def Iterative_SV(y, window_size, order, lowreject=3, highreject=3, numiters=100, deriv=0, rate=1):
   done = False
   iteration = 0
@@ -202,14 +210,20 @@ def Iterative_SV(y, window_size, order, lowreject=3, highreject=3, numiters=100,
 
 """
   Function to find the spectral lines, given a model spectrum
-  spectrum:        An xypoint instance with the model
-  tol:             The line strength needed to count the line (0 is a strong line, 1 is weak)
-  linespacing:     The minimum spacing between two consecutive lines
+  spectrum:        An xypoint instance with the model (Must be linearly spaced!)
+  tol:             The line strength needed to count the line 
+                      (0 is a strong line, 1 is weak)
+  linespacing:     The minimum spacing (nm) between two consecutive lines. 
+                      FindLines will choose the strongest line if there are 
+                      several too close.
 """
 def FindLines(spectrum, tol=0.99, linespacing = 0.01, debug=False):
+  #First, convert the inputs into inputs for scipy's argrelmin
   xspacing = float(max(spectrum.x) - min(spectrum.x))/float(spectrum.size())
   N = int( linespacing / xspacing + 0.5)
   lines = list(argrelmin(spectrum.y, order=N)[0])
+
+  #Check for lines that are too weak.
   for i in range(len(lines)-1, -1, -1):
     idx = lines[i]
     xval = spectrum.x[idx]
@@ -231,31 +245,40 @@ def FindLines(spectrum, tol=0.99, linespacing = 0.01, debug=False):
 
   
   
-
-#This function rebins (x,y) data onto the grid given by the array xgrid
-#  It is designed to rebin to a courser wavelength grid, but can also
-#  interpolate to a finer grid
-def RebinData(data,xgrid, synphot=True):
+"""
+  This function rebins (x,y) data onto the grid given by the array xgrid
+    It is designed to rebin to a courser wavelength grid, but can also
+    interpolate to a finer grid.
+  if synphot=True, it uses pySynphot for the rebinning, which conserves flux
+    Otherwise, it just interpolates the data and continuum which is faster 
+    but could cause problems.
+"""
+def RebinData(data, xgrid, synphot=True):
   if synphot:
     newdata = DataStructures.xypoint(x=xgrid)
     newdata.y = rebin_spec(data.x, data.y, xgrid)
     newdata.cont = rebin_spec(data.x, data.cont, xgrid)
+    
+    #pysynphot has edge effect issues on the first and last index.
     newdata.y[0] = data.y[0]
     newdata.y[-1] = data.y[-1]
     newdata.cont[0] = data.cont[0]
     newdata.cont[-1] = data.cont[-1]
     return newdata
+  
   else:
     data_spacing = data.x[1] - data.x[0]
     grid_spacing = xgrid[1] - xgrid[0]
     newdata = DataStructures.xypoint(x=xgrid)
     if grid_spacing < 2.0*data_spacing:
+      # Interpolate
       Model = spline(data.x, data.y, s=0)
       Continuum = spline(data.x, data.cont, s=0)
       newdata.y = Model(newdata.x)
       newdata.cont = Continuum(newdata.x)
 
     else:
+      # Add up the pixels to rebin (actually re-binning).
       left = numpy.searchsorted(data.x, (3*xgrid[0]-xgrid[1])/2.0)
       for i in range(xgrid.size-1):
         right = numpy.searchsorted(data.x, (xgrid[i]+xgrid[i+1])/2.0)
@@ -268,7 +291,10 @@ def RebinData(data,xgrid, synphot=True):
     return newdata
 
 
-
+"""
+  This takes in an x and y array, as well as the desired new x-array,
+    and outputs the re-binned y array.
+"""
 def rebin_spec(wave, specin, wavnew):
   
   spec = ArraySourceSpectrum(wave=wave, flux=specin)
@@ -279,21 +305,31 @@ def rebin_spec(wave, specin, wavnew):
   return obs.binflux
 
 
-#This function reduces the resolution by convolving with a gaussian kernel
+"""
+  This function reduces the resolution by convolving with a gaussian kernel
+  It assumes constant x-spacing!
+  WARNING! If the wavelength range is very large, it will give incorrect
+    results because it uses a single Gaussian kernel for the whole range.
+    This works just fine for small wavelength ranges such as in CRIRES, 
+    or with echelle spectra. If you have a large wavelength range, use
+    ReduceResolution2!!
+"""
 def ReduceResolution(data,resolution, extend=True):
+  #Make the gaussian kernel
   centralwavelength = (data.x[0] + data.x[-1])/2.0
-  xspacing = data.x[1] - data.x[0]   #NOTE: this assumes constant x spacing!
+  xspacing = data.x[1] - data.x[0]
   FWHM = centralwavelength/resolution;
   sigma = FWHM/(2.0*numpy.sqrt(2.0*numpy.log(2.0)))
   left = 0
   right = numpy.searchsorted(data.x, 10*sigma)
   x = numpy.arange(0,10*sigma, xspacing)
   gaussian = numpy.exp(-(x-5*sigma)**2/(2*sigma**2))
+
+  #Extend the xy axes to avoid edge-effects, if desired
   if extend:
-    #Extend array to try to remove edge effects (do so circularly)
+    
     before = data.y[-gaussian.size/2+1:]
     after = data.y[:gaussian.size/2]
-    #extended = numpy.append(numpy.append(before, data.y), after)
     extended = numpy.r_[before, data.y, after]
 
     first = data.x[0] - float(int(gaussian.size/2.0+0.5))*xspacing
@@ -311,8 +347,12 @@ def ReduceResolution(data,resolution, extend=True):
   newdata.y = fftconvolve(extended, gaussian/gaussian.sum(), mode=conv_mode)
     
   return newdata
-  
-  
+
+
+"""
+  The following is numpy code to quickly convolve a spectrum 
+    for ReduceResolution2. DO NOT CALL THIS DIRECTLY!
+"""
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef numpy.ndarray[DTYPE_t, ndim=1] convolve(numpy.ndarray[DTYPE_t, ndim=1] x, 
@@ -349,7 +389,11 @@ cdef numpy.ndarray[DTYPE_t, ndim=1] convolve(numpy.ndarray[DTYPE_t, ndim=1] x,
   return output
   
   
-  
+
+"""
+  This is a more accurate version of ReduceResolution. 
+    It is also a bit slower.
+"""
 def ReduceResolution2(data,resolution, extend=True, nsig=5):
   sig1 = data.x[0]/(2.0*resolution*numpy.sqrt(2.0*numpy.log(2.0)))
   sig2 = data.x[-1]/(2.0*resolution*numpy.sqrt(2.0*numpy.log(2.0)))
@@ -389,7 +433,9 @@ def ReduceResolution2(data,resolution, extend=True, nsig=5):
 
   
 
-#Just a convenince fcn which combines the above two
+"""
+  Just a convenince fcn which combines two of the above
+"""
 def ReduceResolutionAndRebinData(data,resolution,xgrid):
   data = ReduceResolution(data,resolution)
   return RebinData(data,xgrid)
