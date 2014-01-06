@@ -1,21 +1,21 @@
 """
-    This file provides the xypoint data structure, which I use to store spectra for TelluricFitter
+    This file provides the xypoint data structure, which I use to store spectra for TelFit
     
 
-    This file is part of the TelluricFitter program.
+    This file is part of the TelFit program.
 
-    TelluricFitter is free software: you can redistribute it and/or modify
+    TelFit is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    TelluricFitter is distributed in the hope that it will be useful,
+    TelFit is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with TelluricFitter.  If not, see <http://www.gnu.org/licenses/>.
+    along with TelFit.  If not, see <http://www.gnu.org/licenses/>.
 
 """
 

@@ -36,12 +36,10 @@ from scipy.signal import fftconvolve
 import os
 import DataStructures
 import MakeTape5
-from astropy import constants, units
+from astropy import units
 from collections import defaultdict
 import lockfile
 import struct
-from pysynphot.observation import Observation
-from pysynphot.spectrum import ArraySourceSpectrum, ArraySpectralElement
 import FittingUtilities
 
 
