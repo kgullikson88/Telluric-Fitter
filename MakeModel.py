@@ -30,7 +30,6 @@
 import numpy
 import sys
 import subprocess
-import ConvertMIPASto_lblrtm_format as convert
 import scipy.interpolate
 from scipy.signal import fftconvolve
 import os
