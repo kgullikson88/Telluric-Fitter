@@ -423,13 +423,13 @@ class TelluricFitter:
       model = DataStructures.xypoint(x=xarr)
       Broadened = UnivariateSpline(xarr, numpy.convolve(model_new, broadening_fcn, mode="same"),s=0)
       model.y = Broadened(model.x)
-      model = MakeModel.RebinData(model, data.x)
+      model = FittingUtilities.RebinData(model, data.x)
       
     elif "gauss" in self.resolution_fit_mode or self.first_iteration:
       if (resolution - 10 < self.resolution_bounds[0] or resolution+10 > self.resolution_bounds[1]):
         resolution = numpy.mean(self.resolution_bounds)
-      model = MakeModel.ReduceResolution(model.copy(), resolution)
-      model = MakeModel.RebinData(model.copy(), data.x.copy())
+      model = FittingUtilities.ReduceResolution(model.copy(), resolution)
+      model = FittingUtilities.RebinData(model.copy(), data.x.copy())
 
     else:
       sys.exit("Error! Unrecognized resolution fit mode: %s" %self.resolution_fit_mode)
@@ -453,11 +453,11 @@ class TelluricFitter:
         model = DataStructures.xypoint(x=xarr)
         Broadened = UnivariateSpline(xarr, numpy.convolve(model_new, broadening_fcn, mode="same"),s=0)
         model.y = Broadened(model.x)
-        model = MakeModel.RebinData(model, data.x)
+        model = FittingUtilities.RebinData(model, data.x)
       
       elif "gauss" in self.resolution_fit_mode or self.first_iteration:
-        model = MakeModel.ReduceResolution(model_original.copy(), resolution)
-        model = MakeModel.RebinData(model.copy(), data.x.copy())
+        model = FittingUtilities.ReduceResolution(model_original.copy(), resolution)
+        model = FittingUtilities.RebinData(model.copy(), data.x.copy())
 
     
     resid = data.y/model.y
@@ -623,8 +623,8 @@ class TelluricFitter:
 
     #Interpolate to finer spacing
     xgrid = numpy.linspace(data_original.x[0], data_original.x[-1], data_original.x.size*oversampling)
-    data = MakeModel.RebinData(data_original, xgrid)
-    model = MakeModel.RebinData(telluric, xgrid)
+    data = FittingUtilities.RebinData(data_original, xgrid)
+    model = FittingUtilities.RebinData(telluric, xgrid)
   
     #Begin loop over the lines
     numlines = 0
@@ -761,15 +761,15 @@ class TelluricFitter:
 
     #Subsample the model to speed this part up (it doesn't affect the accuracy much)
     xgrid = numpy.linspace(model.x[0], model.x[-1], model.size()/5)
-    newmodel = MakeModel.RebinData(model, xgrid)
+    newmodel = FittingUtilities.RebinData(model, xgrid)
 
     ResolutionFitErrorBrute = lambda resolution, data, model: numpy.sum(self.ResolutionFitError(resolution, data, model))
     
     resolution = scipy.optimize.fminbound(ResolutionFitErrorBrute, self.resolution_bounds[0], self.resolution_bounds[1], xtol=1, args=(data,newmodel))
     
     print "Optimal resolution found at R = ", float(resolution)
-    newmodel = MakeModel.ReduceResolution(newmodel, float(resolution))
-    return MakeModel.RebinData(newmodel, data.x), float(resolution)
+    newmodel = FittingUtilities.ReduceResolution(newmodel, float(resolution))
+    return FittingUtilities.RebinData(newmodel, data.x), float(resolution)
 
   
   """
@@ -782,8 +782,8 @@ class TelluricFitter:
       print " to Debug_ResFit.log and Debug_ResFit2.log"
       numpy.savetxt("Debug_ResFit.log", numpy.transpose((data.x, data.y, data.cont)))
       numpy.savetxt("Debug_Resfit2.log", numpy.transpose((model.x, model.y)))
-    newmodel = MakeModel.ReduceResolution(model, resolution, extend=False)
-    newmodel = MakeModel.RebinData(newmodel, data.x)
+    newmodel = FittingUtilities.ReduceResolution(model, resolution, extend=False)
+    newmodel = FittingUtilities.RebinData(newmodel, data.x)
     weights = 1.0/data.err**2
     returnvec = (data.y - data.cont*newmodel.y)**2*weights + FittingUtilities.bound(self.resolution_bounds, resolution)
     if self.debug:
@@ -829,7 +829,7 @@ class TelluricFitter:
     Model = UnivariateSpline(model.x, model.y, s=0)
     xnew = numpy.linspace(data.x[0], data.x[-1], n)
     ynew = Spectrum(xnew)
-    model_new = MakeModel.RebinData(model, xnew).y
+    model_new = FittingUtilities.RebinData(model, xnew).y
 
     #Make 'design matrix'
     design = numpy.zeros((n-m,m))
@@ -884,7 +884,7 @@ class TelluricFitter:
       
       idx = self.parnames.index("resolution")
       resolution = self.const_pars[idx]
-      model = MakeModel.ReduceResolution(model, resolution)
+      model = FittingUtilities.ReduceResolution(model, resolution)
       
       #Make broadening function from the gaussian
       centralwavelength = (data.x[0] + data.x[-1])/2.0
@@ -894,7 +894,7 @@ class TelluricFitter:
       right = numpy.searchsorted(xnew, 10*sigma)
       x = numpy.arange(0,10*sigma, xnew[1] - xnew[0])
       gaussian = numpy.exp(-(x-5*sigma)**2/(2*sigma**2))
-      return MakeModel.RebinData(model, data.x), [gaussian/gaussian.sum(), xnew]
+      return FittingUtilities.RebinData(model, data.x), [gaussian/gaussian.sum(), xnew]
       
     elif numpy.mean(Broadening[maxindex-int(m/10.0):maxindex+int(m/10.0)]) < 3* numpy.mean(Broadening[int(m/5.0):]):
       outfilename = "SVD_Error2.log"
@@ -903,7 +903,7 @@ class TelluricFitter:
       
       idx = self.parnames.index("resolution")
       resolution = self.const_pars[idx]
-      model = MakeModel.ReduceResolution(model, resolution)
+      model = FittingUtilities.ReduceResolution(model, resolution)
       
       #Make broadening function from the gaussian
       centralwavelength = (data.x[0] + data.x[-1])/2.0
@@ -913,7 +913,7 @@ class TelluricFitter:
       right = numpy.searchsorted(xnew, 10*sigma)
       x = numpy.arange(0,10*sigma, xnew[1] - xnew[0])
       gaussian = numpy.exp(-(x-5*sigma)**2/(2*sigma**2))
-      return MakeModel.RebinData(model, data.x), [gaussian/gaussian.sum(), xnew]
+      return FittingUtilities.RebinData(model, data.x), [gaussian/gaussian.sum(), xnew]
     
     #If we get here, the broadening function looks okay.
     #Convolve the model with the broadening function
@@ -935,7 +935,7 @@ class TelluricFitter:
     x2 = numpy.arange(Broadening.size)
 
     if full_output:
-      return MakeModel.RebinData(model, data.x), [Broadening, xnew]
+      return FittingUtilities.RebinData(model, data.x), [Broadening, xnew]
     else:
-      return MakeModel.RebinData(model, data.x)
+      return FittingUtilities.RebinData(model, data.x)
 
