@@ -58,7 +58,7 @@ from scipy.interpolate import interp1d, UnivariateSpline
 from scipy.optimize import leastsq, brute, fmin, fmin_bfgs, minimize, basinhopping
 from scipy.linalg import svd, diagsvd
 from scipy import mat
-import MakeModel2 as MakeModel
+import MakeModel
 import DataStructures
 import FittingUtilities
 

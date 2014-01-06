@@ -2,7 +2,7 @@
 
     This file provides the MakeModel class. It is what directly interfaces
       with LBLRTM to make the telluric model. You can call this function 
-      from the bash shell using the command 'python MakeModel2.py' to generate
+      from the bash shell using the command 'python MakeModel.py' to generate
       a model transmission spectrum. The input settings for the model can be
       adjusted at the bottom of this file (after the line that reads
       'if __name__ == "__main__":')
