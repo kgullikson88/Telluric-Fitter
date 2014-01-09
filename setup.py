@@ -248,7 +248,7 @@ setup(
 """
 
 
-setup(name='TelluricFitter',
+setup(name='TelFit',
       version='0.1',
       author='Kevin Gullikson',
       author_email='kgulliks@astro.as.utexas.edu',
