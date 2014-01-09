@@ -54,8 +54,8 @@ import sys
 import os
 import subprocess
 import scipy
-from scipy.interpolate import interp1d, UnivariateSpline
-from scipy.optimize import leastsq, brute, fmin, fmin_bfgs, minimize, basinhopping
+from scipy.interpolate import  UnivariateSpline
+from scipy.optimize import leastsq, minimize, fminbound
 from scipy.linalg import svd, diagsvd
 from scipy import mat
 import MakeModel
@@ -765,7 +765,7 @@ class TelluricFitter:
 
     ResolutionFitErrorBrute = lambda resolution, data, model: numpy.sum(self.ResolutionFitError(resolution, data, model))
     
-    resolution = scipy.optimize.fminbound(ResolutionFitErrorBrute, self.resolution_bounds[0], self.resolution_bounds[1], xtol=1, args=(data,newmodel))
+    resolution = fminbound(ResolutionFitErrorBrute, self.resolution_bounds[0], self.resolution_bounds[1], xtol=1, args=(data,newmodel))
     
     print "Optimal resolution found at R = ", float(resolution)
     newmodel = FittingUtilities.ReduceResolution(newmodel, float(resolution))
