@@ -489,9 +489,9 @@ class TelluricFitter:
       
     #Fine-tune the wavelength calibration by fitting the location of several telluric lines
     if self.fit_primary:
-      modelfcn, mean = self.FitWavelengthOld(data, model2.copy(), fitorder=self.wavelength_fit_order)
+      modelfcn, mean = self.FitWavelength(data, model2.copy(), fitorder=self.wavelength_fit_order)
     else:
-      modelfcn, mean = self.FitWavelengthOld(data, model.copy(), fitorder=self.wavelength_fit_order)
+      modelfcn, mean = self.FitWavelength(data, model.copy(), fitorder=self.wavelength_fit_order)
       
     if self.adjust_wave == "data":
       test = modelfcn(data.x - mean)

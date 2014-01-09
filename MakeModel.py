@@ -42,7 +42,6 @@ import struct
 import FittingUtilities
 
 
-
 #Dectionary giving the number to molecule name for LBLRTM
 MoleculeNumbers = {1: "H2O",
                    2: "CO2",
