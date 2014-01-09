@@ -1,0 +1,5 @@
+This shows an example of how to generate a telluric model library using MakeModel. 
+It should run by just typing
+   python MakeLibrary.py
+By default, MakeModel saves the models in the running directories. You can move the library to the current directory by typing
+   sh move_library_here.sh

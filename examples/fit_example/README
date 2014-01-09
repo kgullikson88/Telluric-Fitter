@@ -1,0 +1,4 @@
+This example demonstrates the fitting process. The input data is of a rapidly rotating B star, and the spectral lines of the primary have been smoothed out to leave only the sharp telluric lines.
+If everything is installed correctly, you should be able to run the example by typing 
+   python Fit.py
+After the fit is done, it will use matplotlib to plot both a comparison of the fit to the data, and the telluric-corrected data. 

@@ -69,12 +69,10 @@ def GetCompilerString():
   #Next, find the fortran compiler to use
   compilers = ["ifort",
                "gfortran",
-	       "g95",
-	       "pgfortran"]
+	       "g95"]
   comp_strs = ["INTEL",
                "GNU",
-	       "G95",
-	       "PGI"]
+	       "G95"]
   found = False
   for i in range(len(compilers)):
     compiler = compilers[i]
@@ -116,7 +114,7 @@ def MakeTAPE3(directory):
 
 
   #Link the HITRAN line list to the current directory
-  linfile = "./aer_v_3.2/line_file/aer_v_3.2"
+  linfile = "%s/aer_v_3.2/line_file/aer_v_3.2" %(os.getcwd())
   subprocess.check_call(["ln", "-s", linfile, "%s/TAPE1" %directory])
 
 
@@ -152,6 +150,7 @@ def MakeLBLRTM():
   #Unpack the tar files
   for fname in ['aer_v_3.2.tar.gz', 'aerlnfl_v2.6.tar.gz', 'aerlbl_v12.2.tar.gz']:
     if fname in os.listdir("./"):
+      print "Un-packing %s" %fname
       subprocess.check_call(["tar", "-xzf", fname])
     else:
       print "\n\n*****    Error!   *****"
@@ -166,7 +165,7 @@ def MakeLBLRTM():
 
 
   #Generate a TAPE3, if necessary.
-  if "TAPE3" no in os.listdir("./lnfl"):
+  if "TAPE3" not in os.listdir("./lnfl"):
     MakeTAPE3("./lnfl")
 
 
@@ -177,16 +176,16 @@ def MakeLBLRTM():
     ensure_dir(directory)
     ensure_dir("%s/OutputModels" %directory)
     for fname in ["runlblrtm_v3.sh", "MIPAS_atmosphere_profile", "ParameterFile", "TAPE5"]:
-      subprocess.check_call(["cp", "%s/%s" %(data, fname), "%s/" %directory])
+      subprocess.check_call(["cp", "data/%s" %fname, "%s/" %directory])
 
     if "TAPE3" in os.listdir(directory):
       subprocess.check_call(["rm", "%s/TAPE3" %directory])
-    subprocess.check_call(["ln", "-s", "lnfl/TAPE3", "%s/TAPE3" %directory])
+    subprocess.check_call(["ln", "-s", "%s/lnfl/TAPE3" %(os.getcwd()), "%s/TAPE3" %directory])
 
     lblrtm_ex = [f for f in os.listdir("./lblrtm") if f.startswith("lblrtm")][0]
     if "lblrtm" in os.listdir(directory):
       subprocess.check_call(["rm", "%s/lblrtm" %directory])
-    subprocess.check_call(["ln", "-s", "lblrtm/%s" %lblrtm_ex, "%s/lblrtm" %directory])
+    subprocess.check_call(["ln", "-s", "%s/lblrtm/%s" %(os.getcwd(), lblrtm_ex), "%s/lblrtm" %directory])
 
     #Make sure the permissions are correct:
     subprocess.check_call(["chmod", "777", "%s/" %directory])
@@ -196,7 +195,7 @@ def MakeLBLRTM():
   line = "export TELLURICMODELING=%s/\n" %os.getcwd()
   print "\nLBLRTM is all set up! The TelluricFitter code requires an environment variable to know where the lblrtm run directories are. You can set the appropriate environment variable with the following command:"
   print "\n\t%s" %line
-  inp = raw_input("\nWould you like us to run this command, and append it to your bash profile (~/.bashrc), so that the environment variable will be set every time you open a new terminal? [Y/n]")
+  inp = raw_input("\nWould you like us to run this command, and append it to your bash profile (~/.bashrc), so that the environment variable will be set every time you open a new terminal? [Y/n] ")
   if "y" in inp.lower() or inp.strip() == "":
     infile = open("%s/.bashrc" %(os.environ["HOME"]), "a+r")
     lines = infile.readlines()
@@ -205,10 +204,38 @@ def MakeLBLRTM():
     else:
       infile.write(line)
     infile.close()
+    subprocess.check_call(line, shell=True)
 
   return
 
 
+
+"""
+The following classes call MakeLBLRTM, and then do the normal
+  installation stuff
+"""
+class CustomInstallCommand(install):
+  def run(self):
+    MakeLBLRTM()
+    install.run(self)
+
+
+class CustomBuildExtCommand(build_ext):
+  def run(self):
+    MakeLBLRTM()
+    build_ext.run(self)
+
+
+requires = ['matplotlib', 
+            'numpy', 
+	    'scipy', 
+	    'astropy', 
+	    'lockfile', 
+	    'pysynphot',
+	    'pyfits',
+	    'fortranformat',
+	    'mlpy']
+    
 
 
 
@@ -220,4 +247,26 @@ setup(
     )
 """
 
-MakeLBLRTM()
+
+setup(name='TelluricFitter',
+      version='0.1',
+      author='Kevin Gullikson',
+      author_email='kgulliks@astro.as.utexas.edu',
+      url="Temporary_url.as.utexas.edu",
+      py_modules=['TelluricFitter', 
+	          'MakeModel',
+		  'DataStructures',
+		  'MakeTape5'],
+      ext_modules = [Extension("FittingUtilities", ["src/FittingUtilities.pyx"],
+	             include_dirs=[numpy.get_include()], 
+		     extra_compile_args=["-O3", "-funroll-loops"]),],
+      cmdclass={'build_ext': CustomBuildExtCommand },
+      data_files = [('', ['data/MIPAS_atmosphere_profile', 
+	                  'data/ParameterFile', 
+			  'data/TAPE5',
+			  'data/runlblrtm_v3.sh']),],
+      install_requires = requires,
+      package_dir = {'': 'src'}
+      )
+
+
