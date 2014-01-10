@@ -9,9 +9,9 @@ Installation
 
 To install this code, you will need to download lblrtm from http://rtweb.aer.com/lblrtm.html. Extract the package, and put the individual tar.gz files in the top-level directory. Alternatively, you can download the full TelFit source, which includes LBLRTM, from http://my.url.utexas.edu. Then, the command 
 
-'''bash
+```bash
 python setup.py install
-'''
+```
 
 should build lblrtm, and set up TelFit to run. It may take a while, as it is building inputs for the LBLRTM code.
 
