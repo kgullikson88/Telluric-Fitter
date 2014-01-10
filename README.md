@@ -1,5 +1,5 @@
-Telluric-Fitter
-===============
+TelFit Code
+===========
 
 This code will fit the telluric absorption spectrum in data, using LBLRTM. More details can be found in the manual and examples, but the installation and run procedure are outlined below.
 
