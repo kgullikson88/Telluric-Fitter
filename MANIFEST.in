@@ -1,0 +1,6 @@
+recursive-include src *
+recursive-include data *
+recursive-include examples *
+include README*
+include LICENSE
+include *.tar.gz
