@@ -189,13 +189,14 @@ def MakeLBLRTM():
 
     #Make sure the permissions are correct:
     subprocess.check_call(["chmod", "777", "%s/" %directory])
+    subprocess.check_call(["chmod", "777", "%s/*" %directory])
 
 
   #Finally, we need to set the environment variable TELLURICMODELING.
   line = "export TELLURICMODELING=%s/\n" %os.getcwd()
   print "\nLBLRTM is all set up! The TelluricFitter code requires an environment variable to know where the lblrtm run directories are. You can set the appropriate environment variable with the following command:"
   print "\n\t%s" %line
-  inp = raw_input("\nWould you like us to run this command, and append it to your bash profile (~/.bashrc), so that the environment variable will be set every time you open a new terminal? [Y/n] ")
+  inp = raw_input("\nWould you like us to run this command, and append it to your bash profile (~/.bashrc), so that the environment variable will be set every time you open a new terminal? Note: if you ran setup.py as super-user, you should choose no and do it yourself! [Y/n] ")
   if "y" in inp.lower() or inp.strip() == "":
     infile = open("%s/.bashrc" %(os.environ["HOME"]), "a+r")
     lines = infile.readlines()
