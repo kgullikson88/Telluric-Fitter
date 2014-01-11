@@ -7,7 +7,7 @@
 \providecommand{\e}[1]{\ensuremath{\times 10^{#1}}}
 \begin{document}
 
-\title{Telluric Fitter Manual (rename to something?)}
+\title{TelFit Manual}
 \author{Kevin Gullikson}
 \date{\today}
 \maketitle
@@ -16,53 +16,51 @@
 
 \section{Installation}
 \label{sec:installation}
-This section will describe the installation procedure for the telluric fitter. It is tailored for linux users, although it should work fine on Mac OSX. This program has not been tested on Windows machines, and likely requires modification to work.
+This section will describe the installation procedure for the TelFit code. It is tailored for linux users, although it should work fine on Mac OSX. This program has not been tested on Windows machines, and likely requires modification to work.
 \subsection{Dependencies}
-There are several dependencies for the telluric fitter, most of which are python packages that can be installed using the python package manager 'pip' (recommended) or 'easy$\_$install'. The python packages needed are listed below.
+There are several dependencies for TelFit, most of which are python packages that can be installed using the python package manager 'pip' (recommended) or 'easy$\_$install'. The python packages needed are listed below.
 \begin{enumerate}
 \item numpy
-\item cython
-\item matplotlib  (used for debugging)
+\item cython     
+\item matplotlib (used for debugging)
 \item scipy
 \item astropy    (used for unit conversion and some constants)
-\item lockfile   (allows several instances of the telluric fitter to be run at once)
+\item lockfile   (allows several instances of TelFit to be run at once)
 \item pysynphot  (Used to rebin the telluric model)
-\item pyfits
 \item fortranformat (Used to make the input file for LBLRTM with the correct formatting)
-\item mlpy
 \end{enumerate}
 The setup.py script (see Section \ref{sec:setup}) requires both numpy and cython, so they must be installed before this program. The setup.py script will attempt to find and install the rest of the dependencies, but I recommend installing at least numpy, scipy, and matplotlib before installing TelluricFitter if you do not have them already.
 
-The telluric fitter also requires the LBLRTM version 12.2 telluric modeling code (in fact, this code is just a wrapper to LBLRTM). It is available from \url{http://rtweb.aer.com/lblrtm.html} The package available contains LBLRTM, which does the telluric modeling, a HITRAN molecular line list, and LNFL, which converts the ascii line list into a binary version suitable for LBLRTM. \emph{You must compile both LNFL and LBLRTM before installing this program.} The installation instructions for these programs are given within the package obtained from the website above. Note that you MUST install LBLRTM and LNFL in single-precision mode. There is an occasional issue with LBLRTM that may cause it to give warnings and output an incorrect telluric model. So far, I have only found this issue when LBLRTM is compiled with the GNU fortran compiler (gfortran) on linux. Using the intel fortran compiler (available for free for non-commercial use from \url{http://software.intel.com/en-us/non-commercial-software-development}) seems to fix the problem.
+TelFit also requires the LBLRTM version 12.2 telluric modeling code (in fact, this code is just a wrapper to LBLRTM). It is available from \url{http://rtweb.aer.com/lblrtm.html} The package available contains LBLRTM, which does the telluric modeling, a HITRAN molecular line list, and LNFL, which converts the ascii line list into a binary version suitable for LBLRTM. If you downloaded the TelFit source code from \url{my.website.edu}, then the LBLRTM source code is included. However, if you installed from my git repository (\url{https://github.com/kgullikson88/Telluric-Fitter}), then you will have to put the following tarfiles into the top-level directory of TelFit (alongside setup.py).
+
+\begin{itemize}
+\item \verb|aerlbl_v12.2.tar.gz|
+\item \verb|aer_v_3.2.tar.gz|
+\item \verb|aerlnfl_v2.6.tar.gz|
+\end{itemize}
+
+The setup.py script will handle the installation of LBLRTM (see Section \ref{sec:setup}). There have been occasional issues using the GNU fortran compiler that are fixed with the Intel compiler. While the intel compiler is not required, I recommend installing it if possible. The compiler is available for free for non-commercial use from \url{http://software.intel.com/en-us/non-commercial-software-development}.
+
 
 
 \subsection{Setup}
 \label{sec:setup}
-After installing LBLRTM and LNFL, you should set environment variables for the location of the executables. You don't need to do this step, because the setup script will ask for them, but it makes your life a little easier. For the bash shell (standard for both Mac and Linux operating systems), type:
-\begin{lstlisting}[language=bash]
-   export LBLRTM=/full/path/to/your/lblrtm/executable 
-   export LNFL=/full/path/to/your/lnfl/executable 
-   export HITRAN=/full/path/to/your/hitran/linelist
-\end{lstlisting}
 
-Then, unpack the tarball using the command:
-\begin{lstlisting}[language=bash]
-   tar -xzf telluric_fitter.tar.gz
-\end{lstlisting}
-A new directory with the same name will be created. That directory contains the python code necessary, as well as some configuration scripts. The primary setup that needs to be done for this code is in preparing run directories for LBLRTM. This should all be handled by the setup.py script, which will ask you for the locations of the lblrtm and lnfl executables, as well as the HITRAN linelist if you did not setup environment variables for them. You should run the setup script by typing the command:
+The primary setup that needs to be done for this code is making and preparing run directories for LBLRTM. This should all be handled by the setup.py script To make everything with default settings you should run the setup script by typing the command:
 \begin{lstlisting}[language=bash]
    python setup.py install
 \end{lstlisting}
-By default, setup.py will make four running directories called 'rundir1', 'rundir2,' 'rundir3', and 'rundir4.' These will be placed in the current working directory.  It also runs LNFL, which generates a binary linelist for use by LBLRTM. By default, the setup script will create a linelist suitable for wavelengths from 300 - 5000 nm. LBLRTM will run faster with a smaller linelist, and so you may wish to adjust these values near the top of the setup script to better suit your needs.
 
-The running directories will contain symbolic links to the lblrtm code and the binary linelist generated by LNFL. It will also contain several input files that configure LBLRTM. The telluric fitter code will adjust these input files as needed, so you should not need to mess with them.
+By default, setup.py will make four running directories called 'rundir1', 'rundir2,' 'rundir3', and 'rundir4.' The number of running directories can be set by editing the value near the top of the setup.py script. These will be placed in the current working directory.  It also runs LNFL, which generates a binary linelist for use by LBLRTM. By default, the setup script will create a linelist suitable for wavelengths from 300 - 5000 nm. LBLRTM will run faster with a smaller linelist, and so you may wish to adjust these values near the top of the setup script to better suit your needs.
 
-Finally, the setup.py script will ask to append a line to your ~/.bashrc. You should either say yes to that prompt and then source your ~/.bashrc once the setup.py script finishes, or copy-paste the command it prints to the screen right before the prompt. 
+The running directories will contain symbolic links to the lblrtm code and the binary linelist generated by LNFL. It will also contain several input files that configure LBLRTM. The TelFit code will adjust these input files as needed, so you should not need to mess with them.
+
+Finally, the setup.py script will ask to append a line to your ~/.bashrc. If you install TelFit into your home directory (using the --user option of setup.py), you should let the script do the setup for you. However, if you run setup.py as super-user, you may run into permission issues, and so you should reply 'no' to the prompt. If you say no in the prompt (or anything without a 'y' in it), you should copy-paste the command it prints to the screen right before the prompt before attempting to use TelFit. 
 
 
 \section{Usage}
 \label{sec:usage}
-In this section, we describe the various functions available to you. Example scripts are also provided in the examples directory. 
+In this section, I describe the various functions available to you. Example scripts are also provided in the examples directory. 
 
 \subsection{MakeModel}
 \label{subsec:makemodel}
