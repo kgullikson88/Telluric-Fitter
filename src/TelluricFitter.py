@@ -299,8 +299,13 @@ class TelluricFitter:
     self.first_iteration = True
     errfcn = lambda pars: numpy.sum(self.FitErrorFunction(pars))
     bounds = [self.bounds[i] for i in range(len(self.parnames)) if self.fitting[i]]
-    optdict = {"rhobeg": 5.0}
-    fitpars = minimize(errfcn, fitpars, method='COBYLA', bounds=bounds, options=optdict, tol=0.001).x
+    optdict = {"rhobeg": [1,5,1000.0]}
+    optdict = {"eps": 5}
+    #output = minimize(errfcn, fitpars, method='SLSQP', bounds=bounds, options=optdict, tol=0.001)
+    
+    #print "Fitting done with output message: \n%s" %output.message
+    #fitpars = output.x
+    fitpars, success = leastsq(self.FitErrorFunction, fitpars, diag=1.0/numpy.array(fitpars))
 
     #Finally, return the best-fit model
     if self.fit_primary:
@@ -335,7 +340,7 @@ class TelluricFitter:
       if self.fitting[i]:
         if len(self.bounds[i]) == 2:
           return_array += FittingUtilities.bound(self.bounds[i], fitpars[fit_idx])
-        outfile.write("%.5g\t" %fitpars[fit_idx])
+        outfile.write("%.12g\t" %fitpars[fit_idx])
         self.parvals[i].append(fitpars[fit_idx])
         fit_idx += 1
       elif len(self.bounds[i]) == 2 and self.parnames[i] != "resolution":
@@ -463,6 +468,7 @@ class TelluricFitter:
     resid = data.y/model.y
     nans = numpy.isnan(resid)
     resid[nans] = data.cont[nans]
+    """
     if self.fit_primary:
       data2 = data.copy()
       data2.y /= model.y
@@ -474,12 +480,19 @@ class TelluricFitter:
       model2 = model.copy()
       model2.y *= primary_star.y
       resid /= primary_star.y
-
+    """
       
     #As the model gets better, the continuum will be less affected by
     #  telluric lines, and so will get better
-    data.cont = FittingUtilities.Continuum(data.x, resid, fitorder=self.continuum_fit_order, lowreject=2, highreject=2)
+    data.cont = FittingUtilities.Continuum(data.x, resid, fitorder=self.continuum_fit_order, lowreject=2, highreject=10)
     
+    if self.fit_primary:
+      primary_star = data.copy()
+      primary_star.y = FittingUtilities.savitzky_golay(resid/data.cont, 61, 4)
+      data.cont /= primary_star.y
+
+
+
     
     if self.debug and self.debug_level >= 4:
       print "Saving data and model arrays right before fitting the wavelength"
@@ -488,7 +501,8 @@ class TelluricFitter:
 
       
     #Fine-tune the wavelength calibration by fitting the location of several telluric lines
-    if self.fit_primary:
+    #if self.fit_primary:
+    if 1>2:
       modelfcn, mean = self.FitWavelength(data, model2.copy(), fitorder=self.wavelength_fit_order)
     else:
       modelfcn, mean = self.FitWavelength(data, model.copy(), fitorder=self.wavelength_fit_order)
@@ -525,7 +539,8 @@ class TelluricFitter:
     while not done:
       done = True
       if "SVD" in self.resolution_fit_mode:
-        if self.fit_primary:
+        #if self.fit_primary:
+	if 1>2:
           model2 = model_original.copy()
           prim = PRIMARY_STAR(model2.x)
           prim[prim < 0.0] = 0.0
@@ -535,8 +550,9 @@ class TelluricFitter:
         else:
           model, self.broadstuff = self.Broaden(data.copy(), model_original.copy(), full_output=True)
       elif "gauss" in self.resolution_fit_mode:
-        if self.fit_primary:
-          model2 = model_original.copy()
+        #if self.fit_primary:
+	if 1>2:
+	  model2 = model_original.copy()
           prim = PRIMARY_STAR(model2.x)
           prim[prim < 0.0] = 0.0
           prim[prim > 10.0] = 10.0
@@ -553,10 +569,10 @@ class TelluricFitter:
     self.data = data
     self.first_iteration = False
     if separate_primary:
-      primary = model.copy()
-      primary.y = PRIMARY_STAR(primary.x)
-      model.y /= primary.y
-      return primary, model
+      #primary = model.copy()
+      #primary.y = PRIMARY_STAR(primary.x)
+      #model.y /= primary.y
+      return primary_star, model
     else:
       return model
 

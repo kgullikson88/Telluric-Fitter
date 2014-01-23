@@ -40,7 +40,7 @@ from collections import defaultdict
 import lockfile
 import struct
 import FittingUtilities
-
+import time
 
 #Dectionary giving the number to molecule name for LBLRTM
 MoleculeNumbers = {1: "H2O",
@@ -265,8 +265,8 @@ class Modeler:
         found = True
         break
     if not found:
-      print "Un-locked directory not found!"
-      sys.exit()
+      print "Un-locked directory not found! Waiting 10 seconds..."
+      time.sleep(10)
     if self.debug:
       print "Telluric Modeling Directory: %s" %TelluricModelingDir
       print "Model Directory: %s" %ModelDir
@@ -314,6 +314,8 @@ class Modeler:
     keys = sorted(Atmosphere.keys())
     lower = max(0, numpy.searchsorted(keys, alt)-1)
     upper = min(lower + 1, len(keys)-1)
+    if lower == upper:
+      raise ZeroDivisionError ("Observatory altitude of %g results in the surrounding layers being the same!" %alt)
     scale_values = list(Atmosphere[lower])
     scale_values[2] = list(Atmosphere[lower][2])
     scale_values[0] = (Atmosphere[upper][0]-Atmosphere[lower][0]) / (keys[upper]-keys[lower]) * (alt-keys[lower]) + Atmosphere[lower][0]
