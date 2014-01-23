@@ -3,3 +3,6 @@
 FittingUtilities.c
 FittingUtilities.so
 build*
+*.tar.gz
+dist*
+src/TelFit.egg-info
