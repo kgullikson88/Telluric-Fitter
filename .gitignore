@@ -1,0 +1,5 @@
+*.pyc
+*.swp
+FittingUtilities.c
+FittingUtilities.so
+build*
