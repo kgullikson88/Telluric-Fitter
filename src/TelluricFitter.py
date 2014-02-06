@@ -441,7 +441,7 @@ class TelluricFitter:
 
     
     #Shift the data (or model) by a constant offset. This gets the wavelength calibration close
-    shift = FittingUtilities.CCImprove(data, model)
+    shift = FittingUtilities.CCImprove(data, model, tol=0.1)
     if self.adjust_wave == "data":
       data.x += shift
     elif self.adjust_wave == "model":
@@ -510,7 +510,7 @@ class TelluricFitter:
     if self.adjust_wave == "data":
       test = modelfcn(data.x - mean)
       xdiff = [test[j] - test[j-1] for j in range(1, len(test)-1)]
-      if min(xdiff) > 0 and numpy.max(test - data.x) < 0.2:
+      if min(xdiff) > 0 and numpy.max(test - data.x) < 0.1:
         print "Adjusting data wavelengths by at most %.8f" %numpy.max(test - model.x)
         data.x = test.copy()
       else:
@@ -519,7 +519,7 @@ class TelluricFitter:
       test = modelfcn(model_original.x - mean)
       test2 = modelfcn(model.x - mean)
       xdiff = [test[j] - test[j-1] for j in range(1, len(test)-1)]
-      if min(xdiff) > 0 and numpy.max(test2 - model.x) < 0.2:
+      if min(xdiff) > 0 and numpy.max(test2 - model.x) < 0.1:
         model.x = test2.copy()
         model_original.x = test.copy()
         print "Adjusting model wavelengths by at most %.8f" %numpy.max(test2 - model.x)

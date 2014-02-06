@@ -225,6 +225,7 @@ class CustomBuildExtCommand(build_ext):
   def run(self):
     MakeLBLRTM()
     build_ext.run(self)
+    
 
 
 requires = ['matplotlib', 
@@ -261,7 +262,8 @@ setup(name='TelFit',
       ext_modules = [Extension("FittingUtilities", ["src/FittingUtilities.pyx"],
 	             include_dirs=[numpy.get_include()], 
 		     extra_compile_args=["-O3", "-funroll-loops"]),],
-      cmdclass={'build_ext': CustomBuildExtCommand },
+      cmdclass={'build_ext': CustomBuildExtCommand ,
+                 'FittingUtilities':build_ext},
       data_files = [('', ['data/MIPAS_atmosphere_profile', 
 	                  'data/ParameterFile', 
 			  'data/TAPE5',
