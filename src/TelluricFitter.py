@@ -96,6 +96,7 @@ class TelluricFitter:
     self.parvals = [[] for i in range(len(self.parnames))]
     self.chisq_vals = []
     self.ignore = []
+    self.shift = 0   #The wavelength shift to make the model and data align
 
     #Just open and close chisq_summary, to clear anything already there
     outfile = open("chisq_summary.dat", "w")
@@ -252,16 +253,19 @@ class TelluricFitter:
     continuum_fit_mode controls how the continuum is fit in the data. Choices are 'polynomial' and 'smooth'
 
     fit_primary determines whether an iterative smoothing is applied to the data to approximate the primary star (only works for primary stars with broad lines)
+    
+    return_resolution controls whether the best-fit resolution is returned to the user or not.
 
     adjust_wave can be set to either 'data' or 'model'. To wavelength calibrate the data to the telluric lines, set to 'data'. If you think the wavelength calibration is good on the data (such as Th-Ar lines in the optical), then set to 'model' Note that currently, the vacuum --> air conversion for the telluric model is done in a very approximate sense, so adjusting the data wavelengths may introduce a small (~1 km/s) offset from what it should be.
   """
-  def Fit(self, resolution_fit_mode="SVD", fit_primary=False, adjust_wave="model", continuum_fit_order=7, wavelength_fit_order=3):
+  def Fit(self, resolution_fit_mode="SVD", fit_primary=False, return_resolution=False, adjust_wave="model", continuum_fit_order=7, wavelength_fit_order=3):
 
     self.resolution_fit_mode=resolution_fit_mode
     self.fit_primary = fit_primary
     self.adjust_wave = adjust_wave
     self.continuum_fit_order = continuum_fit_order
     self.wavelength_fit_order = wavelength_fit_order
+    self.return_resolution=return_resolution
 
     #Check to make sure the user gave data to fit
     if self.data == None:
@@ -309,9 +313,9 @@ class TelluricFitter:
 
     #Finally, return the best-fit model
     if self.fit_primary:
-      return self.GenerateModel(fitpars, separate_primary=True)
+      return self.GenerateModel(fitpars, separate_primary=True, return_resolution=return_resolution)
     else:
-      return self.GenerateModel(fitpars)
+      return self.GenerateModel(fitpars, return_resolution=return_resolution)
     
 
 
@@ -319,7 +323,10 @@ class TelluricFitter:
     The error function for the fitter. This should never be called directly!
   """
   def FitErrorFunction(self, fitpars):
-    model = self.GenerateModel(fitpars)
+    if self.return_resolution:
+      model, resolution = self.GenerateModel(fitpars, return_resolution=True)
+    else:
+      model = self.GenerateModel(fitpars)
     outfile = open("chisq_summary.dat", 'a')
     weights = 1.0 / self.data.err**2
 
@@ -362,7 +369,7 @@ class TelluricFitter:
     wavelength, and fitting the detector resolution
 
   """
-  def GenerateModel(self, pars, nofit=False, separate_primary=False):
+  def GenerateModel(self, pars, nofit=False, separate_primary=False, return_resolution=False):
     data = self.data
     #Update self.const_pars to include the new values in fitpars
     #  I know, it's confusing that const_pars holds some non-constant parameters...
@@ -400,6 +407,12 @@ class TelluricFitter:
 
     #Generate the model:
     model = self.Modeler.MakeModel(pressure, temperature, wavenum_start, wavenum_end, angle, h2o, co2, o3, n2o, co, ch4, o2, no, so2, no2, nh3, hno3, lat=lat, alt=alt, wavegrid=None, resolution=None)
+    
+    #Shift the x-axis, using the shift from previous iterations
+    if self.adjust_wave == "data":
+      data.x += self.shift
+    elif self.adjust_wave == "model":
+      model.x -= self.shift
 
     #Save each model if debugging
     if self.debug and self.debug_level >= 5:
@@ -448,6 +461,7 @@ class TelluricFitter:
       model_original.x -= shift
     else:
       sys.exit("Error! adjust_wave parameter set to invalid value: %s" %self.adjust_wave)
+    self.shift += shift
 
       
     #Need to reduce resolution to initial guess again if the model was shifted
@@ -569,10 +583,12 @@ class TelluricFitter:
     self.data = data
     self.first_iteration = False
     if separate_primary:
-      #primary = model.copy()
-      #primary.y = PRIMARY_STAR(primary.x)
-      #model.y /= primary.y
-      return primary_star, model
+      if return_resolution:
+        return primary_star, model, resolution
+      else:
+        return primary_star, model
+    elif return_resolution:
+      return model, resolution
     else:
       return model
 
