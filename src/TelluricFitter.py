@@ -482,19 +482,6 @@ class TelluricFitter:
     resid = data.y/model.y
     nans = numpy.isnan(resid)
     resid[nans] = data.cont[nans]
-    """
-    if self.fit_primary:
-      data2 = data.copy()
-      data2.y /= model.y
-      primary_star = data.copy()
-      primary_star.y = FittingUtilities.savitzky_golay(data2.y, 91, 4)
-      primary_star.y /= primary_star.y.mean()
-      PRIMARY_STAR = UnivariateSpline(primary_star.x, primary_star.y, s=0)
-
-      model2 = model.copy()
-      model2.y *= primary_star.y
-      resid /= primary_star.y
-    """
       
     #As the model gets better, the continuum will be less affected by
     #  telluric lines, and so will get better
@@ -816,10 +803,20 @@ class TelluricFitter:
       numpy.savetxt("Debug_Resfit2.log", numpy.transpose((model.x, model.y)))
     newmodel = FittingUtilities.ReduceResolution(model, resolution, extend=False)
     newmodel = FittingUtilities.RebinData(newmodel, data.x)
+
+    #Find the regions to use (ignoring the parts that were defined as bad)
+    good = numpy.arange(self.data.x.size, dtype=numpy.int32)
+    for region in self.ignore:
+      x0 = min(region)
+      x1 = max(region)
+      tmp1 = [self.data.x[i] in self.data.x[good] for i in range(self.data.x.size)]
+      tmp2 = numpy.logical_or(self.data.x<x0, self.data.x>x1)
+      good = numpy.where(numpy.logical_and(tmp1, tmp2))[0]
+
     weights = 1.0/data.err**2
-    returnvec = (data.y - data.cont*newmodel.y)**2*weights + FittingUtilities.bound(self.resolution_bounds, resolution)
+    returnvec = (data.y - data.cont*newmodel.y)[good]**2 * weights[good] + FittingUtilities.bound(self.resolution_bounds, resolution)
     if self.debug:
-      print "Resolution-fitting X^2 = ", numpy.sum(returnvec)/float(weights.size), "at R = ", resolution
+      print "Resolution-fitting X^2 = ", numpy.sum(returnvec)/float(good.size), "at R = ", resolution
     if numpy.isnan(numpy.sum(returnvec**2)):
       print "Error! NaN found in ResolutionFitError!"
       outfile=open("ResolutionFitError.log", "a")
