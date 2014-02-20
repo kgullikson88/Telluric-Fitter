@@ -144,12 +144,15 @@ class TelluricFitter:
   
   def AdjustValue(self, vardict):
     """
-    Similar to FitVariable, but this just adjusts the value of a constant parameter
+    Similar to FitVariable, but this just adjusts the value of a constant parameter.
+    Warning! If the variable will be removed from the fitting list, so DO NOT use this
+    to adjust the value of a parameter you want fitted.
     """
     for par in vardict.keys():
       try:
         idx = self.parnames.index(par)
         self.const_pars[idx] = vardict[par]
+        self.fitting[idx] = False
       except ValueError:
         print "Error! Bad parameter name given. Currently available are: "
         self.DisplayVariables()
