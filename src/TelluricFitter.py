@@ -1,4 +1,6 @@
 """
+Telluric Fitter "TelFit"
+=====================================================
 This module provides the 'TelluricFitter' class, used
 to fit the telluric lines in data.
 
@@ -104,10 +106,13 @@ class TelluricFitter:
 
 
     
-  """
-    Display the value of each of the parameters, and show whether it is being fit or not
-  """
   def DisplayVariables(self, fitonly=False):
+    """
+    Display the value of each of the parameters, and show whether it is being fit or not
+
+    -fitonly:  bool variable. If true, it only shows the variables being fit. Otherwise,
+               it shows all variables.
+    """
     print "%.15s\tValue\t\tFitting?\tBounds" %("Parameter".ljust(15))
     print "-------------\t-----\t\t-----\t\t-----"
     for i in range(len(self.parnames)):
@@ -118,11 +123,13 @@ class TelluricFitter:
           print "%.15s\t%.5g\t\t%s" %(self.parnames[i].ljust(15), self.const_pars[i], self.fitting[i])
 
 
-  """
-    Add one or more variables to the list being fit. vardict must be a dictionary
-      where the key is the parameter name and the value is the value of that parameter.
-  """
   def FitVariable(self, vardict):
+    """
+    Add one or more variables to the list being fit. 
+
+    - vardict:   a dictionary where the key is the parameter 
+                 name and the value is the value of that parameter.
+    """
     for par in vardict.keys():
       try:
         idx = self.parnames.index(par)
@@ -134,10 +141,11 @@ class TelluricFitter:
         raise ValueError
 
         
-  """
-    Similar to FitVariable, but this just adjusts the value of a constant parameter
-  """
+  
   def AdjustValue(self, vardict):
+    """
+    Similar to FitVariable, but this just adjusts the value of a constant parameter
+    """
     for par in vardict.keys():
       try:
         idx = self.parnames.index(par)
@@ -147,12 +155,13 @@ class TelluricFitter:
         self.DisplayVariables()
         raise ValueError
 
-  """
+  
+  def SetBounds(self, bounddict):
+    """
     Similar to FitVariable, but it sets bounds on the variable. This can technically
       be done for any variable, but is only useful to set bounds for those variables
       being fit (and detector resolution)
-  """
-  def SetBounds(self, bounddict):
+    """
     for par in bounddict.keys():
       try:
         idx = self.parnames.index(par)
@@ -165,11 +174,12 @@ class TelluricFitter:
         raise ValueError
 
 
-  """
+  
+  def SetObservatory(self, observatory):
+    """
     Set the observatory. Can either give a dictionary with the latitude and altitude,
       or give the name of the observatory. Some names are hard-coded in here.
-  """
-  def SetObservatory(self, observatory):
+    """
     if type(observatory) == str:
       if observatory.lower() == "ctio":
         self.observatory["latitude"] = -30.6
@@ -198,11 +208,12 @@ class TelluricFitter:
       raise ValueError("Error! Unrecognized input to TelluricFitter.SetObservatory()")
     
 
-  """
+  
+  def ImportData(self, data):
+    """
     Function for the user to give the data. The data should be in the form of
       a DataStructures.xypoint structure.
-  """
-  def ImportData(self, data):
+    """
     if not isinstance(data, DataStructures.xypoint):
       raise TypeError( "ImportData Error! Given data is not a DataStructures.xypoint structure!" )
     self.data = data.copy()
@@ -210,20 +221,34 @@ class TelluricFitter:
 
 
 
-  """
-    Edits the atmosphere profile for a given parameter. This is just a wrapper
-      for the MakeModel.Modeler method.
-  """
+  
   def EditAtmosphereProfile(self, profilename, profile_height, profile_value):
+    """
+    Edits the atmosphere profile for a given parameter. This is just a wrapper
+      for the MakeModel.Modeler method, but the docstring is replicated below:
+
+    -profilename:  A string with the name of the profile to edit.
+                   Should be either 'pressure', 'temperature', or
+                   one of the molecules given in the MakeModel.MoleculeNumbers
+                   dictionary
+    -profile_height:  A numpy array with the height in the atmosphere (in km)
+    -profile_value:   A numpy array with the value of the profile parameter at
+                      each height given in profile_height.
+    """
     self.Modeler.EditProfile(profilename, profile_height, profile_value)
     
   
-  """
+  
+  def IgnoreRegions(self, region):
+    """
     Tells the fitter to ignore certain regions of the spectrum
       in the chi-squared calculation. Useful for stellar or interstellar
       lines.
-  """
-  def IgnoreRegions(self, region):
+
+    -region:  Can be either a list of size 2 with the beginning and ending
+              wavelength range to ignore, or a list of lists giving several
+              wavelength ranges at once. 
+    """
     if not isinstance(region, list) or len(region) == 0:
       raise TypeError("Must give a non-empty list to TelluricFitter.IgnoreRegions")
     
@@ -241,24 +266,52 @@ class TelluricFitter:
 
 
 
-  """
-    Finally, the main fitting function. Before calling this, the user MUST
+  
+  def Fit(self, data=None, resolution_fit_mode="SVD", fit_primary=False, return_resolution=False, adjust_wave="model", continuum_fit_order=7, wavelength_fit_order=3):
+    """
+    The main fitting function. Before calling this, the user MUST
       1: call FitVariable at least once, specifying which variables will be fit
-      2: import data into the class using the ImportData method.
-    resolution_fit_mode controls which function is used to estimate the resolution.
-      3: Set resolution bounds (any other bounds are optional)
-      "SVD" is for singlular value decomposition, while "gauss" is for convolving with a gaussian
-      (and fitting the width of the guassian to give the best fit)
+      2: Set resolution bounds (any other bounds are optional)
 
-    continuum_fit_mode controls how the continuum is fit in the data. Choices are 'polynomial' and 'smooth'
 
-    fit_primary determines whether an iterative smoothing is applied to the data to approximate the primary star (only works for primary stars with broad lines)
+    -data:                  If given, this should be a DataStructures.xypoint instance
+                            giving the data you wish to fit. In previous versions, this
+                            had to be given separately in the 'ImportData' method.
     
-    return_resolution controls whether the best-fit resolution is returned to the user or not.
+    -resolution_fit_mode:   controls which function is used to estimate the resolution.
+                            "SVD" is for singlular value decomposition, while "gauss" 
+                            is for convolving with a gaussian (and fitting the width 
+                            of the guassian to give the best fit)                         
 
-    adjust_wave can be set to either 'data' or 'model'. To wavelength calibrate the data to the telluric lines, set to 'data'. If you think the wavelength calibration is good on the data (such as Th-Ar lines in the optical), then set to 'model' Note that currently, the vacuum --> air conversion for the telluric model is done in a very approximate sense, so adjusting the data wavelengths may introduce a small (~1 km/s) offset from what it should be.
-  """
-  def Fit(self, resolution_fit_mode="SVD", fit_primary=False, return_resolution=False, adjust_wave="model", continuum_fit_order=7, wavelength_fit_order=3):
+    -fit_primary:           determines whether an iterative smoothing is applied to the 
+                            data to approximate the primary star (only works for primary 
+                            stars with broad lines). If true, this function returns both
+                            the best-fit model and the primary star estimate. FYI: The name
+                            is a legacy of what I use telluric correction for: searching for
+                            spectroscopic binary stars.
+    
+    -return_resolution:     controls whether the best-fit resolution is returned to the user.
+                            One case I have used this for is to fit echelle data of late-type 
+                            stars by getting all the best-fit parameters from redder orders,
+                            and then applying those atmospheric parameters to the rest of the
+                            orders.
+
+    -adjust_wave:           can be set to either 'data' or 'model'. To wavelength calibrate the 
+                            data to the telluric lines, set to 'data'. If you think the wavelength
+                            calibration is good on the data (such as Th-Ar lines in the optical), 
+                            then set to 'model' Note that currently, the vacuum --> air conversion 
+                            for the telluric model is done in a very approximate sense, so 
+                            adjusting the data wavelengths may introduce a small (few km/s) offset 
+                            from what it should be.
+                            
+    -continuum_fit_order:   The polynomial order with which to fit the continuum. It uses a 
+                            sigma-clipping algorithm so that the continuum is not strongly 
+                            affected by stellar lines (either absorption or emission)
+                            
+    -wavelength_fit_order:  The polynomial order with which to adjust the wavelength fit. Note
+                            that the 'adjust_wave' input will determine whether the data or the
+                            telluric model is wavelength-adjusted.
+    """
 
     self.resolution_fit_mode=resolution_fit_mode
     self.fit_primary = fit_primary
@@ -267,10 +320,12 @@ class TelluricFitter:
     self.wavelength_fit_order = wavelength_fit_order
     self.return_resolution=return_resolution
 
-    #Check to make sure the user gave data to fit
-    if self.data == None:
-      print "\n\nError! Must supply data to fit\n\n!"
-      return
+    #Check if the user gave data to fit
+    if data != None:
+      self.ImportData(data)
+    elif self.data == None:
+      raise AttributeError ("\n\nError! Must supply data to fit\n\n!"
+
 
     #Make sure resolution bounds are given (resolution is always fit)
     idx = self.parnames.index("resolution")
@@ -319,10 +374,11 @@ class TelluricFitter:
     
 
 
-  """
-    The error function for the fitter. This should never be called directly!
-  """
+  
   def FitErrorFunction(self, fitpars):
+    """
+    The error function for the fitter. This should never be called directly!
+    """
     if self.return_resolution:
       model, resolution = self.GenerateModel(fitpars, return_resolution=True)
     else:
@@ -363,13 +419,16 @@ class TelluricFitter:
 
 
 
-  """
-  This function does the actual work of generating a model with the given parameters,
-    fitting the continuum, making sure the model and data are well aligned in
-    wavelength, and fitting the detector resolution
-
-  """
+  
   def GenerateModel(self, pars, nofit=False, separate_primary=False, return_resolution=False):
+    """
+    This function does the actual work of generating a model with the given parameters,
+    fitting the continuum, making sure the model and data are well aligned in
+    wavelength, and fitting the detector resolution. In general, it is not meant to be
+    called directly by the user. However, the 'nofit' keyword turns this into a wrapper
+    to MakeModel.Modeler().MakeModel() with all the appropriate parameters.
+
+    """
     data = self.data
     #Update self.const_pars to include the new values in fitpars
     #  I know, it's confusing that const_pars holds some non-constant parameters...
@@ -581,8 +640,12 @@ class TelluricFitter:
 
 
   
-  #Wavelength-fitting function that just shifts lines, instead of fitting them to gaussians
+  
   def WavelengthErrorFunction(self, shift, data, model):
+    """
+    Error function for the scipy.minimize fitters. Not meant to be
+    called directly by the user!
+    """
     modelfcn = UnivariateSpline(model.x, model.y, s=0)
     weight = 1e9 * numpy.ones(data.x.size)
     weight[data.y > 0] = 1.0/numpy.sqrt(data.y[data.y > 0])
@@ -596,8 +659,11 @@ class TelluricFitter:
     return returnvec
 
 
-  #Gaussian absorption line
   def GaussianFitFunction(self, x,params):
+    """
+    Generate a gaussian absorption line. Not meant to be called
+    directly by the user!
+    """
     cont = params[0]
     depth = params[1]
     mu = params[2]
@@ -605,21 +671,26 @@ class TelluricFitter:
     return cont - depth*numpy.exp(-(x-mu)**2/(2*sig**2))
 
 
-  #Returns the residuals between the fit from above and the actual values
   def GaussianErrorFunction(self, params, x, y):
+    """
+    Error function for the scipy.minimize fitters. Not meant to be
+    called directly by the user!
+    """
     return self.GaussianFitFunction(x,params) - y
+
+
   
-  """
+  
+  def FitWavelength(self, data_original, telluric, tol=0.05, oversampling=4, fitorder=3):
+    """
     Function to fine-tune the wavelength solution of a generated model
-      It does so looking for telluric lines in both the
+      It does so by looking for telluric lines in both the
       data and the telluric model. For each line, it finds the shift needed
       to make them line up, and then fits a function to that fit over the
-      full wavelength range of the data.
-
-    Wavelength calibration MUST already be very close for this algorithm
-      to succeed!
-  """
-  def FitWavelength(self, data_original, telluric, tol=0.05, oversampling=4, fitorder=3):
+      full wavelength range of the data. Wavelength calibration MUST already 
+      be very close for this algorithm to succeed! NOT MEANT TO BE CALLED
+      DIRECTLY BY THE USER!
+    """
     print "Fitting Wavelength"
     old = []
     new = []
@@ -770,12 +841,13 @@ class TelluricFitter:
 
 
 
-  """
-    Fits the instrumental resolution with a Gaussian
-  """
+  
   def FitResolution(self, data, model, resolution=75000.0):
-    ####resolution is the initial guess####
-
+    """
+    Fits the instrumental resolution with a Gaussian. This method is 
+    called by GenerateModel, and is not meant to be called by the user!
+    """
+    
     print "Fitting Resolution"
 
     #Subsample the model to speed this part up (it doesn't affect the accuracy much)
@@ -791,10 +863,12 @@ class TelluricFitter:
     return FittingUtilities.RebinData(newmodel, data.x), float(resolution)
 
   
-  """
-    This function gets called by scipy.optimize.fminbound in FitResolution (above)
-  """
+  
   def ResolutionFitError(self, resolution, data, model):
+    """
+    This function gets called by scipy.optimize.fminbound in FitResolution.
+    Not meant to be called directly by the user!
+    """
     resolution = max(1000.0, float(int(float(resolution) + 0.5)))
     if self.debug and self.debug_level >= 5:
       print "Saving inputs for R = ", resolution
@@ -832,8 +906,12 @@ class TelluricFitter:
   
 
 
-  """
-    -Fits the broadening profile using singular value decomposition
+  
+  def Broaden(self, data, model, oversampling = 5, m = 101, dimension = 20, full_output=False):
+    """
+    Fits the broadening profile using singular value decomposition. This function is
+    called by GenerateModel, and is not meant to be called directly!
+    
     -oversampling is the oversampling factor to use before doing the SVD
     -m is the size of the broadening function, in oversampled units
     -dimension is the number of eigenvalues to keep in the broadening function. (Keeping too many starts fitting noise)
@@ -844,7 +922,6 @@ class TelluricFitter:
              object you are trying to telluric correct), the broadening function
              can become multiply-peaked and oscillatory. Use with care!
   """
-  def Broaden(self, data, model, oversampling = 5, m = 101, dimension = 20, full_output=False):
     n = data.x.size*oversampling
     
     #n must be even, and m must be odd!

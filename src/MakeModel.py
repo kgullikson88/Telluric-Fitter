@@ -168,16 +168,25 @@ class Modeler:
     return
 
 
-  """
-  This function will take a numpy array as a profile, and stitch it into the
-    MIPAS atmosphere profile read in in __init__
-  """
+  
   def EditProfile(self, profilename, profile_height, profile_value):
+    """
+    This function will take a numpy array as a profile, and stitch it into the
+      MIPAS atmosphere profile read in in __init__
+
+    -profilename:  A string with the name of the profile to edit.
+                   Should be either 'pressure', 'temperature', or
+                   one of the molecules given in the MakeModel.MoleculeNumbers
+                   dictionary
+    -profile_height:  A numpy array with the height in the atmosphere (in km)
+    -profile_value:   A numpy array with the value of the profile parameter at
+                      each height given in profile_height.
+    """
     #Translate the (string) name of the profile to a number
     profilenum = -1
-    if profilename == "Pressure":
+    if profilename.lower() == "pressure":
       profilenum = 0
-    elif profilename == "Temperature":
+    elif profilename.lower() == "temperature":
       profilenum = 1
     else:
       profilenum = 2
@@ -195,7 +204,7 @@ class Modeler:
     if profilenum < 0:
       print "Error! Profilename given in Modeler.EditProfile is invalid!"
       print "You gave: ", profilename
-      print "Valid options are either a molecule name, 'Pressure', or 'Temperature'"
+      print "Valid options are either a molecule name, 'pressure', or 'temperature'"
       raise ValueError
 
     #Okay, they gave a valid profile name. Lets grab some class variables
@@ -233,24 +242,28 @@ class Modeler:
     
 
 
-  """
-    Release the lock on the directory.
-  """
+  
   def Cleanup(self):
+    """
+      Release the lock on the directory. This can be called on its own, but
+      should never need to be.
+    """
     lock = self.lock
     #Unlock directory
     try:
       lock.release()
     except lockfile.NotLocked:
-      print "Woah, the model directory was somehow unlocked prematurely!"
+      warnings.warn("The model directory was somehow unlocked prematurely!")
     return
 
 
-  """
+  
+  def FindWorkingDirectory(self):
+    """
     Find a run directory to work in. This is necessary so that you
       can run several instances of MakeModel (or TelFit) at once.
-  """
-  def FindWorkingDirectory(self):
+      Should not need to be called on directly by the user.
+    """
     #Determine output filename
     TelluricModelingDirRoot = self.TelluricModelingDirRoot
     NumRunDirs = self.NumRunDirs
@@ -276,21 +289,32 @@ class Modeler:
     self.lock = lock
 
   
-  """
+  
+  def MakeModel(self, pressure=795.0, temperature=283.0, lowfreq=4000, highfreq=4600, angle=45.0, humidity=50.0, co2=368.5, o3=3.9e-2, n2o=0.32, co=0.14, ch4=1.8, o2=2.1e5, no=1.1e-19, so2=1e-4, no2=1e-4, nh3=1e-4, hno3=5.6e-4, lat=30.6, alt=2.1, wavegrid=None, resolution=None, save=False, libfile=None):
+    """
     Here is the important function! All of the variables have default values, 
       which you will want to override for any realistic use.
-    Units:
-      Pressure: hPa
-      Temperature: Kelvin
-      lowfreq, highfreq: wavenumber (cm^-1)
-      angle: degrees (it is the zenith angle of the telescope)
-      humidity: percent
-      co2 - hno3 abundances: ppmv concentration
-      lat: degrees (it is the latitude of the observatory)
-      alt: km (it is the altitude of the observatory above sea level)
+    Arguments/Units:
+      Pressure:               Pressure at telescope altitude (hPa)
+      Temperature:            Temperature at telescope altitude (Kelvin)
+      lowfreq, highfreq:      low and high wavenumber (cm^-1)
+      angle:                  The zenith angle of the telescope (degrees)
+      humidity:               percent humidity
+      co2 - hno3 abundances:  ppmv concentration
+      lat:                    The latitude of the observatory (degrees)
+      alt:                    The altitude of the observatory above sea level (km)
+      wavegrid:               If given, the model will be resampled to this grid. 
+                              Should be a numpy array
+      resolution:             If given, it will reduce the resolution by convolving
+                              with a gaussian of appropriate width. Should be a float
+                              with R=lam/dlam
+      save:                   If true, the generated model is saved. The filename will be
+                              printed to the screen.
+      libfile:                Useful if generating a telluric library. The filename of the
+                              saved file will be written to this filename. Should be a string
+                              variable. Ignored if save==False
       
-  """
-  def MakeModel(self, pressure=795.0, temperature=283.0, lowfreq=4000, highfreq=4600, angle=45.0, humidity=50.0, co2=368.5, o3=3.9e-2, n2o=0.32, co=0.14, ch4=1.8, o2=2.1e5, no=1.1e-19, so2=1e-4, no2=1e-4, nh3=1e-4, hno3=5.6e-4, lat=30.6, alt=2.1, wavegrid=None, resolution=None, save=False, libfile=None):
+    """
 
     self.FindWorkingDirectory()
     
@@ -413,13 +437,15 @@ class Modeler:
     return DataStructures.xypoint(x=wavelength[::-1], y=transmission[::-1])
 
 
-  """
-  Here is a function to read in the binary output of lblrtm, and convert
-    it into arrays of frequency and transmission. 
-  Warning! Some values are hard-coded in for single precision calculations.
-    You MUST compile lblrtm as single precision or this won't work!
-  """
+  
   def ReadTAPE12(self, directory, filename="TAPE12_ex", appendto=None):
+    """
+    Here is a function to read in the binary output of lblrtm, and convert
+      it into arrays of frequency and transmission. 
+    Warning! Some values are hard-coded in for single precision calculations.
+      You MUST compile lblrtm as single precision or this won't work! 
+    Not meant to be called directly by the user.
+    """
     debug = self.debug
     if not directory.endswith("/"):
       directory = directory + "/"
