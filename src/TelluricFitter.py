@@ -327,7 +327,7 @@ class TelluricFitter:
     if data != None:
       self.ImportData(data)
     elif self.data == None:
-      raise AttributeError ("\n\nError! Must supply data to fit\n\n!"
+      raise AttributeError ("\n\nError! Must supply data to fit\n\n!")
 
 
     #Make sure resolution bounds are given (resolution is always fit)
@@ -549,10 +549,10 @@ class TelluricFitter:
     #  telluric lines, and so will get better
     data.cont = FittingUtilities.Continuum(data.x, resid, fitorder=self.continuum_fit_order, lowreject=2, highreject=10)
     
-    if self.fit_primary:
+    if separate_primary:
       primary_star = data.copy()
       primary_star.y = FittingUtilities.savitzky_golay(resid/data.cont, 61, 4)
-      data.cont /= primary_star.y
+      data.cont *= primary_star.y
 
 
 
