@@ -6,3 +6,5 @@ build*
 *.tar.gz
 dist*
 src/TelFit.egg-info
+*.aux
+*.log
