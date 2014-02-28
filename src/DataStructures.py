@@ -78,6 +78,12 @@ class xypoint:
       cont = numpy.array([self.cont[i] for i in range(start, stop, step)])
       err = numpy.array([self.err[i] for i in range(start, stop, step)])
       return xypoint(x=x, y=y, cont=cont, err=err)
+    elif isinstance(index, list):
+      x = self.x[index]
+      y = self.y[index]
+      cont = self.cont[index]
+      err = self.err[index]
+      return xypoint(x=x, y=y, cont=cont, err=err)
     else:
       return [self.x[index], self.y[index], self.cont[index], self.err[index]]
   def __len__(self):
