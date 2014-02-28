@@ -245,25 +245,29 @@ def FindLines(spectrum, tol=0.99, linespacing = 0.01, debug=False):
 
   
   
-"""
+
+def RebinData(data, xgrid, synphot=True):
+  """
   This function rebins (x,y) data onto the grid given by the array xgrid
     It is designed to rebin to a courser wavelength grid, but can also
     interpolate to a finer grid.
   if synphot=True, it uses pySynphot for the rebinning, which conserves flux
     Otherwise, it just interpolates the data and continuum which is faster 
     but could cause problems.
-"""
-def RebinData(data, xgrid, synphot=True):
+  """
   if synphot:
     newdata = DataStructures.xypoint(x=xgrid)
     newdata.y = rebin_spec(data.x, data.y, xgrid)
     newdata.cont = rebin_spec(data.x, data.cont, xgrid)
+    newdata.err = rebin_spec(data.x, data.err, xgrid) #Unlikely to be correct!
     
     #pysynphot has edge effect issues on the first and last index.
     newdata.y[0] = data.y[0]
     newdata.y[-1] = data.y[-1]
     newdata.cont[0] = data.cont[0]
     newdata.cont[-1] = data.cont[-1]
+    newdata.err[0] = data.err[0]
+    newdata.err[-1] = data.err[-1]
     return newdata
   
   else:

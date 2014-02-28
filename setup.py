@@ -229,14 +229,12 @@ class CustomBuildExtCommand(build_ext):
 
 
 requires = ['matplotlib', 
-            'numpy', 
-	    'scipy', 
-	    'astropy', 
-	    'lockfile', 
-	    'pysynphot',
-	    'pyfits',
-	    'fortranformat',
-	    'mlpy']
+            'numpy>=1.6', 
+	          'scipy', 
+            'astropy', 
+	          'lockfile', 
+	          'pysynphot>=0.7',
+	          'fortranformat']
     
 
 
@@ -251,23 +249,24 @@ setup(
 
 
 setup(name='TelFit',
-      version='0.1',
+      version='0.2',
       author='Kevin Gullikson',
       author_email='kgulliks@astro.as.utexas.edu',
-      url="Temporary_url.as.utexas.edu",
+      url="http://www.as.utexas.edu/~kgulliks/projects.html",
       py_modules=['TelluricFitter', 
-	          'MakeModel',
-		  'DataStructures',
-		  'MakeTape5'],
+	                'MakeModel',
+		              'DataStructures',
+		              'MakeTape5'],
       ext_modules = [Extension("FittingUtilities", ["src/FittingUtilities.pyx"],
-	             include_dirs=[numpy.get_include()], 
-		     extra_compile_args=["-O3", "-funroll-loops"]),],
+	                             include_dirs=[numpy.get_include()], 
+		                           extra_compile_args=["-O3", "-funroll-loops"]),
+                    ],
       cmdclass={'build_ext': CustomBuildExtCommand ,
-                 'FittingUtilities':build_ext},
+                'FittingUtilities':build_ext},
       data_files = [('', ['data/MIPAS_atmosphere_profile', 
-	                  'data/ParameterFile', 
-			  'data/TAPE5',
-			  'data/runlblrtm_v3.sh']),],
+	                        'data/ParameterFile', 
+			                    'data/TAPE5',
+		                      'data/runlblrtm_v3.sh']),],
       install_requires = requires,
       package_dir = {'': 'src'}
       )
