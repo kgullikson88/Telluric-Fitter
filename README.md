@@ -7,13 +7,25 @@ This code will fit the telluric absorption spectrum in data, using LBLRTM. More 
 Installation
 ------------
 
-To install this code, you will need to download lblrtm from http://rtweb.aer.com/lblrtm.html. Extract the package, and put the individual tar.gz files in the top-level directory. Alternatively, you can download the full TelFit source, which includes LBLRTM, from http://my.url.utexas.edu. Then, the command 
+To install this code, you will need to download lblrtm from http://rtweb.aer.com/lblrtm.html. Extract the package, and put the individual tar.gz files in the top-level directory. Alternatively, you can download the full TelFit source, which includes LBLRTM, from http://www.as.utexas.edu/~kgulliks/projects.html. You MUST install the following dependencies before TelFit:
+  
+  -matplotlib
+  -scipy
+  -numpy  v1.6 or greater
+  -cython
+
+ Then, the command 
 
 ```bash
-python setup.py install
+python setup.py install [--user]
 ```
 
-should build lblrtm, and set up TelFit to run. It may take a while, as it is building inputs for the LBLRTM code.
+should build lblrtm, and set up TelFit to run. It may take a while, as it is building inputs for the LBLRTM code. The final step of the automatic build procedure should be to download and install the other dependencies:
+
+  -fortranformat
+  -astropy
+  -pysynphot
+  -lockfile
 
 
 Running TelFit
