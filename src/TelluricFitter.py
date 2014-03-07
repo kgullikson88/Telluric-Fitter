@@ -547,11 +547,11 @@ class TelluricFitter:
       
     #As the model gets better, the continuum will be less affected by
     #  telluric lines, and so will get better
-    data.cont = FittingUtilities.Continuum(data.x, resid, fitorder=self.continuum_fit_order, lowreject=2, highreject=10)
+    data.cont = FittingUtilities.Continuum(data.x, resid, fitorder=self.continuum_fit_order, lowreject=2, highreject=2)
     
     if separate_primary:
       primary_star = data.copy()
-      primary_star.y = FittingUtilities.savitzky_golay(resid/data.cont, 61, 4)
+      primary_star.y = FittingUtilities.Iterative_SV(resid/data.cont, 61, 4, lowreject=2, highreject=2)
       data.cont *= primary_star.y
 
 
