@@ -504,7 +504,7 @@ class Modeler:
 if __name__ == "__main__":
   pressure = 796.22906
   temperature = 270.40
-  humidity = 90.0
+  humidity = 40.0
   angle = 40.8
   co2 = 368.5
   o3 = 0.039
@@ -512,10 +512,8 @@ if __name__ == "__main__":
   co = 0.15
   o2 = 2.2e5
 
-  lowwave = 445
-  highwave = 446
-  lowwave = 600
-  highwave = 900
+  lowwave = 620
+  highwave = 650
   lowfreq = 1e7/highwave
   highfreq = 1e7/lowwave
   modeler = Modeler(debug=False)

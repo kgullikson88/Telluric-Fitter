@@ -8,11 +8,19 @@ from astropy import units, constants
 if __name__ == "__main__":
   #Initialize fitter
   fitter = TelluricFitter.TelluricFitter(debug=False)
+
+  #Set the observatory location with a keyword
   fitter.SetObservatory("McDonald")
+
+  #Can also give a python dictionary like below
+  #observatory = {"latitude": 30.5,
+  #               "altitude": 2.5}
+  #fitter.SetObservatory(observatory)
 
   #Read in the spectrum and store as an xypoint
   x,y,c,e = numpy.loadtxt("Spectrum.dat", unpack=True)
   data = DataStructures.xypoint(x=x, y=y, cont=c, err=e)
+  
 
   #The following are parameters that should be in the fits header for an observation
   angle = 37.4    #Zenith distance
@@ -44,7 +52,7 @@ if __name__ == "__main__":
   #Import the data to be fit to the fitter
   fitter.ImportData(data)
 
-  #Perform the fit
+  #Perform the fit. See the documentation for all the options for fit
   model = fitter.Fit(resolution_fit_mode="gauss", adjust_wave="model")
 
   #Get the improved continuum from the fitter
