@@ -41,8 +41,8 @@ ctypedef numpy.float64_t DTYPE_t
 # upper bound:            ubound(boundary_value, parameter)
 # lower and upper bounds: bound([low, high], parameter)
 # fixed parameter:        fixed(fixed_value, parameter)
-lbound = lambda p, x: 1e0*numpy.sqrt(p-x) + 1e-3*(p-x) if (x<p) else 0
-ubound = lambda p, x: 1e0*numpy.sqrt(x-p) + 1e-3*(x-p) if (x>p) else 0
+lbound = lambda p, x: 1e1*numpy.sqrt(p-x) + 1e-3*(p-x) if (x<p) else 0
+ubound = lambda p, x: 1e1*numpy.sqrt(x-p) + 1e-3*(x-p) if (x>p) else 0
 bound  = lambda p, x: lbound(p[0],x) + ubound(p[1],x)
 fixed  = lambda p, x: bound((p,p), x)
 

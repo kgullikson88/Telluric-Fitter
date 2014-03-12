@@ -416,6 +416,8 @@ class TelluricFitter:
     self.chisq_vals.append(numpy.sum(return_array)/float(weights.size))
     print "X^2 = ", numpy.sum(return_array)/float(weights.size)
     outfile.close()
+    print len(return_array)
+    
     
     return return_array
 
