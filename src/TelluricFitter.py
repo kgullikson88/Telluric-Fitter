@@ -491,25 +491,11 @@ class TelluricFitter:
     model_original = model.copy()
   
     #Reduce to initial guess resolution
-    if "SVD" in self.resolution_fit_mode and not self.first_iteration:
-      broadening_fcn = self.broadstuff[0]
-      xarr = self.broadstuff[1]
-      Model = UnivariateSpline(model_original.x, model_original.y, s=0)
-      model_new = Model(xarr)
-      model = DataStructures.xypoint(x=xarr)
-      Broadened = UnivariateSpline(xarr, numpy.convolve(model_new, broadening_fcn, mode="same"),s=0)
-      model.y = Broadened(model.x)
-      model = FittingUtilities.RebinData(model, data.x)
-      
-    elif "gauss" in self.resolution_fit_mode or self.first_iteration:
-      if (resolution - 10 < self.resolution_bounds[0] or resolution+10 > self.resolution_bounds[1]):
-        resolution = numpy.mean(self.resolution_bounds)
-      model = FittingUtilities.ReduceResolution(model.copy(), resolution)
-      model = FittingUtilities.RebinData(model.copy(), data.x.copy())
-
-    else:
-      sys.exit("Error! Unrecognized resolution fit mode: %s" %self.resolution_fit_mode)
-
+    if (resolution - 10 < self.resolution_bounds[0] or resolution+10 > self.resolution_bounds[1]):
+      resolution = numpy.mean(self.resolution_bounds)
+    model = FittingUtilities.ReduceResolution(model.copy(), resolution)
+    model = FittingUtilities.RebinData(model.copy(), data.x.copy())
+    
     
     #Shift the data (or model) by a constant offset. This gets the wavelength calibration close
     shift = FittingUtilities.CCImprove(data, model, tol=0.1)
@@ -517,24 +503,12 @@ class TelluricFitter:
       data.x += shift
     elif self.adjust_wave == "model":
       model_original.x -= shift
+      # In this case, we need to adjust the resolution again
+      model = FittingUtilities.ReduceResolution(model_original.copy(), resolution)
+      model = FittingUtilities.RebinData(model.copy(), data.x.copy())
     else:
       sys.exit("Error! adjust_wave parameter set to invalid value: %s" %self.adjust_wave)
     self.shift += shift
-
-      
-    #Need to reduce resolution to initial guess again if the model was shifted
-    if self.adjust_wave == "model":
-      if "SVD" in self.resolution_fit_mode and not self.first_iteration:
-        Model = UnivariateSpline(model_original.x, model_original.y, s=0)
-        model_new = Model(xarr)
-        model = DataStructures.xypoint(x=xarr)
-        Broadened = UnivariateSpline(xarr, numpy.convolve(model_new, broadening_fcn, mode="same"),s=0)
-        model.y = Broadened(model.x)
-        model = FittingUtilities.RebinData(model, data.x)
-      
-      elif "gauss" in self.resolution_fit_mode or self.first_iteration:
-        model = FittingUtilities.ReduceResolution(model_original.copy(), resolution)
-        model = FittingUtilities.RebinData(model.copy(), data.x.copy())
 
     
     resid = data.y/model.y
@@ -561,16 +535,13 @@ class TelluricFitter:
       
     #Fine-tune the wavelength calibration by fitting the location of several telluric lines
     #if self.fit_primary:
-    if 1>2:
-      modelfcn, mean = self.FitWavelength(data, model2.copy(), fitorder=self.wavelength_fit_order)
-    else:
-      modelfcn, mean = self.FitWavelength(data, model.copy(), fitorder=self.wavelength_fit_order)
+    modelfcn, mean = self.FitWavelength(data, model.copy(), fitorder=self.wavelength_fit_order)
       
     if self.adjust_wave == "data":
       test = modelfcn(data.x - mean)
       xdiff = [test[j] - test[j-1] for j in range(1, len(test)-1)]
       if min(xdiff) > 0 and numpy.max(test - data.x) < 0.1:
-        print "Adjusting data wavelengths by at most %.8f" %numpy.max(test - model.x)
+        print "Adjusting data wavelengths by at most %.8g" %numpy.max(test - model.x)
         data.x = test.copy()
       else:
         print "Warning! Wavelength calibration did not succeed!"
@@ -581,7 +552,7 @@ class TelluricFitter:
       if min(xdiff) > 0 and numpy.max(test2 - model.x) < 0.1:
         model.x = test2.copy()
         model_original.x = test.copy()
-        print "Adjusting model wavelengths by at most %.8f" %numpy.max(test2 - model.x)
+        print "Adjusting model wavelengths by at most %.8g" %numpy.max(test2 - model.x)
       else:
         print "Warning! Wavelength calibration did not succeed!"
     else:
@@ -598,27 +569,9 @@ class TelluricFitter:
     while not done:
       done = True
       if "SVD" in self.resolution_fit_mode:
-        #if self.fit_primary:
-	if 1>2:
-          model2 = model_original.copy()
-          prim = PRIMARY_STAR(model2.x)
-          prim[prim < 0.0] = 0.0
-          prim[prim > 10.0] = 10.0
-          model2.y *= prim
-          model, self.broadstuff = self.Broaden(data.copy(), model2, full_output=True)
-        else:
-          model, self.broadstuff = self.Broaden(data.copy(), model_original.copy(), full_output=True)
+        model, self.broadstuff = self.Broaden(data.copy(), model_original.copy(), full_output=True)
       elif "gauss" in self.resolution_fit_mode:
-        #if self.fit_primary:
-	if 1>2:
-	  model2 = model_original.copy()
-          prim = PRIMARY_STAR(model2.x)
-          prim[prim < 0.0] = 0.0
-          prim[prim > 10.0] = 10.0
-          model2.y *= prim
-          model, resolution = self.FitResolution(data.copy(), model2.y, resolution)
-        else:
-          model, resolution = self.FitResolution(data.copy(), model_original.copy(), resolution)
+        model, resolution = self.FitResolution(data.copy(), model_original.copy(), resolution)
       else:
         done = False
         print "Resolution fit mode set to an invalid value: %s" %self.resolution_fit_mode
