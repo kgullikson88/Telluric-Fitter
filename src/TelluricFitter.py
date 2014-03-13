@@ -363,10 +363,6 @@ class TelluricFitter:
     bounds = [self.bounds[i] for i in range(len(self.parnames)) if self.fitting[i]]
     optdict = {"rhobeg": [1,5,1000.0]}
     optdict = {"eps": 5}
-    #output = minimize(errfcn, fitpars, method='SLSQP', bounds=bounds, options=optdict, tol=0.001)
-    
-    #print "Fitting done with output message: \n%s" %output.message
-    #fitpars = output.x
     fitpars, success = leastsq(self.FitErrorFunction, fitpars, diag=1.0/numpy.array(fitpars))
 
     #Finally, return the best-fit model
@@ -416,8 +412,6 @@ class TelluricFitter:
     self.chisq_vals.append(numpy.sum(return_array)/float(weights.size))
     print "X^2 = ", numpy.sum(return_array)/float(weights.size)
     outfile.close()
-    print len(return_array)
-    
     
     return return_array
 
