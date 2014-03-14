@@ -18,7 +18,7 @@
 \label{sec:installation}
 This section will describe the installation procedure for the TelFit code. It is tailored for linux users, although it should work fine on Mac OSX. This program has not been tested on Windows machines, and likely requires modification to work.
 \subsection{Dependencies}
-There are several dependencies for TelFit, most of which are python packages that can be installed using the python package manager 'pip' (recommended) or 'easy$\_$install'. The python packages needed are listed below.
+There are several dependencies for TelFit, most of which are python packages that can be installed using the python package manager such as 'pip.' The python packages needed are listed below.
 \begin{enumerate}
 \item numpy v1.6 or greater
 \item cython     
@@ -29,7 +29,7 @@ There are several dependencies for TelFit, most of which are python packages tha
 \item pysynphot v0.7 or greater  (Used to rebin the telluric model)
 \item fortranformat (Used to make the input file for LBLRTM with the correct formatting)
 \end{enumerate}
-The setup.py script (see Section \ref{sec:setup}) requires both numpy and cython, so they must be installed before this program. The setup.py script will attempt to find and install the rest of the dependencies, but I strongly recommend installing at least numpy, scipy, and matplotlib before installing TelluricFitter if you do not have them already. If you are new to Python, the Anaconda distribution (\url{http://continuum.io/downloads}) has all of these packaged nicely.
+The setup.py script (see Section \ref{sec:setup}) requires both numpy and cython, so they must be installed before this program. The setup.py script will attempt to find and install the rest of the dependencies, but I strongly recommend installing at least numpy, scipy, and matplotlib before installing TelFit if you do not have them already. If you are new to Python, the Anaconda distribution (\url{http://continuum.io/downloads}) has all of these packaged nicely.
 
 TelFit also requires the LBLRTM version 12.2 telluric modeling code (in fact, this code is just a wrapper to LBLRTM). It is available from \url{http://rtweb.aer.com/lblrtm.html} The package available contains LBLRTM, which does the telluric modeling, a HITRAN molecular line list, and LNFL, which converts the ascii line list into a binary version suitable for LBLRTM. If you downloaded the TelFit source code from \url{http://www.as.utexas.edu/~kgulliks/projects.html}, then the LBLRTM source code is included. However, if you installed from my git repository (\url{https://github.com/kgullikson88/Telluric-Fitter}), then you will have to put the following tarfiles into the top-level directory of TelFit (alongside setup.py).
 
