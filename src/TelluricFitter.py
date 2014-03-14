@@ -677,6 +677,10 @@ class TelluricFitter:
         left = numpy.searchsorted(model.x, line - tol)
         right = numpy.searchsorted(model.x, line + tol)
         minindex = model.y[left:right].argmin() + left
+        
+	#Don't use lines that are saturated
+	if model.y[minindex] < 0.05:
+	  continue
 
         mean = model.x[minindex]
         left2 = numpy.searchsorted(model.x, mean - tol*2)
@@ -691,7 +695,10 @@ class TelluricFitter:
         right = numpy.searchsorted(data.x, line + tol)
         minindex = data.y[left:right].argmin() + left
 
-        mean = data.x[minindex]
+	if data.y[minindex]/data.cont[minindex] < 0.05:
+	  continue
+	
+	mean = data.x[minindex]
 
         argdata = DataStructures.xypoint(right2 - left2)
         argdata.x = numpy.copy(data.x[left2:right2])
