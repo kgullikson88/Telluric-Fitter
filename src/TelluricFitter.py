@@ -86,7 +86,7 @@ class TelluricFitter:
     self.resolution_bounds = [10000.0, 100000.0]
 
     homedir = os.environ['HOME']
-    self.resolution_fit_mode="SVD"
+    self.resolution_fit_mode="gauss"
     self.fit_primary = False
     self.adjust_wave = "model"
     self.first_iteration=True
@@ -270,7 +270,7 @@ class TelluricFitter:
 
 
   
-  def Fit(self, data=None, resolution_fit_mode="SVD", fit_primary=False, return_resolution=False, adjust_wave="model", continuum_fit_order=7, wavelength_fit_order=3):
+  def Fit(self, data=None, resolution_fit_mode="gauss", fit_primary=False, return_resolution=False, adjust_wave="model", continuum_fit_order=7, wavelength_fit_order=3):
     """
     The main fitting function. Before calling this, the user MUST
       1: call FitVariable at least once, specifying which variables will be fit
@@ -534,7 +534,6 @@ class TelluricFitter:
 
       
     #Fine-tune the wavelength calibration by fitting the location of several telluric lines
-    #if self.fit_primary:
     modelfcn, mean = self.FitWavelength(data, model.copy(), fitorder=self.wavelength_fit_order)
       
     if self.adjust_wave == "data":
@@ -568,7 +567,7 @@ class TelluricFitter:
     done = False
     while not done:
       done = True
-      if "SVD" in self.resolution_fit_mode:
+      if "SVD" in self.resolution_fit_mode and min(model.y) < 0.95:
         model, self.broadstuff = self.Broaden(data.copy(), model_original.copy(), full_output=True)
       elif "gauss" in self.resolution_fit_mode:
         model, resolution = self.FitResolution(data.copy(), model_original.copy(), resolution)
@@ -992,12 +991,12 @@ class TelluricFitter:
     sigma = params[3] * (xnew[1] - xnew[0]) 
     FWHM = sigma * 2.0*numpy.sqrt(2.0*numpy.log(2.0))
     resolution = numpy.median(data.x) / FWHM
-    idx = self.parnames.index("resolution")
-    self.const_pars[idx] = resolution
+    #idx = self.parnames.index("resolution")
+    #self.const_pars[idx] = resolution
     
     print "Approximate resolution = %g" %resolution
     
-    x2 = numpy.arange(Broadening.size)
+    #x2 = numpy.arange(Broadening.size)
 
     if full_output:
       return FittingUtilities.RebinData(model, data.x), [Broadening, xnew]
