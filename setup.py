@@ -239,22 +239,15 @@ class OnlyInstall(install):
 
 requires = ['matplotlib', 
             'numpy>=1.6', 
-	          'scipy', 
-            'astropy', 
-	          'lockfile', 
-	          'pysynphot>=0.7',
-	          'fortranformat']
+	    'scipy>=0.13', 
+            'astropy>=0.2', 
+	    'lockfile', 
+	    'pysynphot>=0.7',
+	    'fortranformat']
     
 
 
 
-"""
-setup(
-    cmdclass = {'build_ext': build_ext},
-    ext_modules = [Extension("FittingUtilities", ["src/FittingUtilities.pyx"], include_dirs=[numpy.get_include()], extra_compile_args=["-O3", "-funroll-loops"]),],
-    #package_dir = {'': 'src' }
-    )
-"""
 
 
 setup(name='TelFit',
