@@ -225,6 +225,15 @@ class CustomBuildExtCommand(build_ext):
   def run(self):
     MakeLBLRTM()
     build_ext.run(self)
+
+
+"""
+  This only does the install. Useful if something went wrong
+  but LBLRTM already installed
+"""
+class OnlyInstall(install):
+  def run(self):
+    install.run(self)
     
 
 
@@ -249,20 +258,21 @@ setup(
 
 
 setup(name='TelFit',
-      version='0.2',
+      version='0.3',
       author='Kevin Gullikson',
       author_email='kgulliks@astro.as.utexas.edu',
       url="http://www.as.utexas.edu/~kgulliks/projects.html",
       py_modules=['TelluricFitter', 
-	                'MakeModel',
-		              'DataStructures',
-		              'MakeTape5'],
+	          'MakeModel',
+		  'DataStructures',
+		  'MakeTape5'],
       ext_modules = [Extension("FittingUtilities", ["src/FittingUtilities.pyx"],
 	                             include_dirs=[numpy.get_include()], 
 		                           extra_compile_args=["-O3", "-funroll-loops"]),
                     ],
       cmdclass={'build_ext': CustomBuildExtCommand ,
-                'FittingUtilities':build_ext},
+                'FittingUtilities':build_ext,
+		'SkipLBL': OnlyInstall},
       data_files = [('', ['data/MIPAS_atmosphere_profile', 
 	                        'data/ParameterFile', 
 			                    'data/TAPE5',
