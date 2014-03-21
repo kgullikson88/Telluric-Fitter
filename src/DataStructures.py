@@ -36,11 +36,11 @@ class xypoint:
          shape = (size,4). That is the shape returned by numpy.loadtxt
          with unpack=False.
     """
-    if arr != None:
-      self.x = arr[:,0]
-      self.y = arr[:,1]
-      self.cont = arr[:,2]
-      self.err = arr[:,3]
+    if array != None:
+      self.x = array[:,0]
+      self.y = array[:,1]
+      self.cont = array[:,2]
+      self.err = array[:,3]
       return
 
     if x != None:
