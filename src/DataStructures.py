@@ -25,7 +25,24 @@ import sys
 
 
 class xypoint:
-  def __init__(self, size=100, x=None, y=None, cont=None, err=None):
+  def __init__(self, size=100, x=None, y=None, cont=None, err=None, array=None):
+    """
+      Generate an xypoint instance. Can do one of the following three things:
+      1: Give a size only. This will generate an xypoint of a given size.
+         You should fill it with your data in your own script
+      2: Give x,y,cont,and err arrays, as numpy arrays. This will just
+         copy the arrays into the xypoint structure
+      3: Give a multidimensional array. For now at least, it must have
+         shape = (size,4). That is the shape returned by numpy.loadtxt
+         with unpack=False.
+    """
+    if arr != None:
+      self.x = arr[:,0]
+      self.y = arr[:,1]
+      self.cont = arr[:,2]
+      self.err = arr[:,3]
+      return
+
     if x != None:
       size = x.size
     if y != None:
@@ -88,6 +105,18 @@ class xypoint:
       return [self.x[index], self.y[index], self.cont[index], self.err[index]]
   def __len__(self):
     return self.size()
+  def toarray(self, norm=False):
+    """
+    Turns the data structure into a multidimensional numpy array
+    If norm == True, it will have shape self.size(), 2 and the y 
+      axis will be divided by the continuum axis
+    Otherwise, it will have shape self.size(), 4
+    """
+    if norm:
+      return numpy.array((self.x, self.y/self.cont)).transpose()
+    else:
+      return numpy.array((self.x, self.y, self.cont, self.err)).transpose()
+
 
 
   
