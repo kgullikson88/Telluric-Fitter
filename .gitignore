@@ -1,7 +1,7 @@
 *.pyc
 *.swp
-FittingUtilities.c
-FittingUtilities.so
+src/FittingUtilities.c
+src/FittingUtilities.so
 build*
 *.tar.gz
 dist*
