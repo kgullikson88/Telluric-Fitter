@@ -5,6 +5,23 @@
 \usepackage{listings}
 \usepackage{fancyvrb}
 \providecommand{\e}[1]{\ensuremath{\times 10^{#1}}}
+
+\lstset{
+    language=Python,
+    basicstyle=\ttfamily\small,
+    %breaklines=true,
+    %prebreak=\raisebox{0ex}[0ex][0ex]{\ensuremath{\hookleftarrow}},
+    frame=lines,
+    showtabs=false,
+    showspaces=false,
+    showstringspaces=false,
+    keywordstyle=\color{red}\bfseries,
+    stringstyle=\color{green!50!black},
+    captionpos=t,
+    escapeinside={\%*}{*)}
+}
+
+
 \begin{document}
 
 \title{TelFit Manual}
@@ -123,7 +140,7 @@ __init__(debug=False, observatory="McDonald", NumRunDirs=4,
   \item \begin{Verbatim}[commandchars=\\\{\}]
 EditProfile(self, profilename, profile_height, profile_value)
     \end{Verbatim}
-   Use this function to give a new atmospheric profile. This will generally give more accurate results than just using the generic mid-latitude profile. 
+   Use this function to give a new atmospheric profile. This will generally give more accurate results than just using the generic mid-latitude profile. Instructions for getting a profile from the Global Data Assimilation System (GDAS) meteorological archive are shown in Appendix \ref{ap:gdas}.
   
   \begin{itemize}
   \item profilename: The name of the profile you want to edit. Available names are:
@@ -305,11 +322,85 @@ The xypoint object supports slicing as well, although the output depends on how 
 
 
 
+\appendix
+\section{Using the Global Data Assimilation System meteorological archive}
+
+\label{ap:gdas}
+
+In most cases, a good atmosphere profile goes a long ways to improving the telluric fit. This section explains the usage of the Global Data Assimilation System meteorological archive, and how to input the results into TelFit. These instructions were made on March 31, 2014. If the archive website changes after publication, you are on your own! The steps for getting an appropriate atmosphere profile are listed below:
+
+\begin{enumerate}
+  \item Enter the latitude and longitude of the observatory
+  \item In the Sounding row, choose the entry titled ``GDAS (1 deg, 3 hourly, Global).'' For observatories in the United States, the NAM sounding data, labeled ``NAM (12km, 3 hourly, U.S.),'' will be slightly more accurate. Hit the ``Go'' button in sounding row.
+  \item Choose the appropriate UT date.
+  \item Choose the appropriate UT time in the first row.
+  \item Choose ``Text only'' in the ``Output Options'' row.
+  \item Choose ``Text listing'' in the ``Graphics'' row.
+  \item Complete the captcha and hit the ``Get Sounding'' button
+  \item Copy the second block of information into a text file. It will look something like this:
+  \begin{verbatim}
+ PRESS HGT(MSL) TEMP DEW PT  WND DIR  WND SPD
+ HPA       M      C     C       DEG     M/S  
+ E = Estimated Surface Height
+
+ 1015.     0.   27.1   22.8    92.3     4.2
+ 1000.   130.   25.8   22.0    93.3     4.5
+  975.   354.   23.6   21.6    94.6     4.6
+  950.   581.   21.6   20.3    98.5     4.7
+  925.   813.   20.3   17.6   108.5     4.2
+  900.  1049.   18.9   16.0    96.2     3.7
+  875.  1291.   17.6   14.4    95.9     3.3
+  850.  1539.   16.2   12.8   102.7     2.8
+  825.  1793.   14.8   10.7   110.5     2.4
+  800.  2053.   13.6    8.2   114.3     1.9
+  775.  2320.   12.8    4.5    98.0     1.3
+  750.  2595.   12.2   -0.9    39.3     1.5
+  725.  2878.   11.4   -5.1    13.8     2.9
+  700.  3170.    9.7   -1.9     5.5     4.4
+  650.  3781.    5.8   -4.2   358.6     5.8
+  600.  4431.    2.5  -12.6   353.8     5.7
+  550.  5130.   -0.6  -23.6   338.2     4.6
+  500.  5884.   -5.4  -24.9   322.3     5.0
+  450.  6701.  -11.1  -22.5   318.2     8.5
+  400.  7594.  -17.5  -33.7   314.5    11.2
+  350.  8579.  -24.3  -45.5   312.3    12.5
+  300.  9682.  -33.4  -48.3   318.2    12.9
+  250. 10934.  -43.8  -55.2   318.3    12.7
+  200. 12393.  -55.3  -60.3   303.2    12.7
+  150. 14165.  -68.9  -73.2   305.7    10.4
+  100. 16532.  -75.7  -83.4   318.7     8.4
+   50. 20622.  -65.0  -87.3   144.1     2.9
+  \end{verbatim}
+\end{enumerate}
+
+The text file you created has the pressure, temperature, and dew point at several atmosphere heights. You should read in the appropriate columns in your Python code (NumPy's loadtxt command works well for this). You must do some quick unit conversion and sorting before inputting the atmosphere profile to TelFit. Some sample code to read in the profile, sort it, convert the dew point to a humidity, convert the height to km, and convert the temperature to Kelvin is shown below. Most of the code is self explanatory, except for the conversion from dew point temperature to mixing ratio in ppmv. The equation and constants were taken from a compilation of formulas for humidity, available at \url{http://www.vaisala.com/Vaisala%20Documents/Application%20notes/Humidity_Conversion_Formulas_B210973EN-F.pdf}
 
 
 
 
 
+\begin{lstlisting}[language=Python, caption={Code to adjust units from GDAS archive}]
+
+
+      #Read in GDAS atmosphere profile information
+      Pres,height,Temp,dew = numpy.loadtxt(atmosphere_fname,
+                                           usecols=(0,1,2,3), 
+                                           unpack=True)
+      sorter = numpy.argsort(height)
+      height = height[sorter]
+      Pres = Pres[sorter]
+      Temp = Temp[sorter]
+      dew = dew[sorter]
+      
+      #Convert dew point temperature to ppmv
+      Pw = 6.116441 * 10**(7.591386*Temp/(Temp + 240.7263))
+      h2o = Pw / (Pres-Pw) * 1e6
+      
+      height /= 1000.0
+      Temp += 273.15
+
+
+\end{lstlisting}
 
 
 %\newpage
