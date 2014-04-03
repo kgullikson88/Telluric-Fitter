@@ -158,6 +158,21 @@ class TelluricFitter:
         self.DisplayVariables()
         raise ValueError
 
+
+  def GetValue(self, variable):
+    """
+    Returns the value of the variable given.
+    Useful to get the fitted value of the parameters
+    """
+    if variable in self.parnames:
+      idx = self.parnames.index(variable)
+      return self.const_pars[idx]
+    else:
+      print "Error! Bad parameter name given (%s)." %(variable)
+      print "Currently available parameter names are: "
+      self.DisplayVariables()
+
+
   
   def SetBounds(self, bounddict):
     """
