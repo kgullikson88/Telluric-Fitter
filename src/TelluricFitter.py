@@ -34,17 +34,14 @@ Usage:
     This file is part of the TelFit program.
 
     TelFit is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+    it under the terms of the MIT license.
 
     TelFit is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-    You should have received a copy of the GNU General Public License
-    along with TelFit.  If not, see <http://www.gnu.org/licenses/>.
+    You should have received a copy of the MIT license
+    along with TelFit.  If not, see <http://opensource.org/licenses/MIT>.
 
 
 """
@@ -157,6 +154,21 @@ class TelluricFitter:
         print "Error! Bad parameter name given. Currently available are: "
         self.DisplayVariables()
         raise ValueError
+
+
+  def GetValue(self, variable):
+    """
+    Returns the value of the variable given.
+    Useful to get the fitted value of the parameters
+    """
+    if variable in self.parnames:
+      idx = self.parnames.index(variable)
+      return self.const_pars[idx]
+    else:
+      print "Error! Bad parameter name given (%s)." %(variable)
+      print "Currently available parameter names are: "
+      self.DisplayVariables()
+
 
   
   def SetBounds(self, bounddict):
