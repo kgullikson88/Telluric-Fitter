@@ -1,4 +1,5 @@
 """
+   y0. 26539.  -47.9 -273.1    81.8    15.3
 Telluric Fitter "TelFit"
 =====================================================
 This module provides the 'TelluricFitter' class, used
@@ -85,6 +86,7 @@ class TelluricFitter:
     homedir = os.environ['HOME']
     self.resolution_fit_mode="gauss"
     self.fit_primary = False
+    self.fit_source = False
     self.adjust_wave = "model"
     self.first_iteration=True
     self.continuum_fit_order = 7
@@ -282,7 +284,7 @@ class TelluricFitter:
 
 
   
-  def Fit(self, data=None, resolution_fit_mode="gauss", fit_primary=False, return_resolution=False, adjust_wave="model", continuum_fit_order=7, wavelength_fit_order=3):
+  def Fit(self, data=None, resolution_fit_mode="gauss", fit_primary=False, fit_source=False, return_resolution=False, adjust_wave="model", continuum_fit_order=7, wavelength_fit_order=3):
     """
     The main fitting function. Before calling this, the user MUST
       1: call FitVariable at least once, specifying which variables will be fit
@@ -298,12 +300,10 @@ class TelluricFitter:
                             is for convolving with a gaussian (and fitting the width 
                             of the guassian to give the best fit)                         
 
-    -fit_primary:           determines whether an iterative smoothing is applied to the 
-                            data to approximate the primary star (only works for primary 
-                            stars with broad lines). If true, this function returns both
-                            the best-fit model and the primary star estimate. FYI: The name
-                            is a legacy of what I use telluric correction for: searching for
-                            spectroscopic binary stars.
+    -fit_source:            determines whether an iterative smoothing is applied to the 
+                            data to approximate the source spectrum. Only works if the 
+                            source spectrum has broad lines. If true, this function returns both
+                            the best-fit model and the source estimate. 
     
     -return_resolution:     controls whether the best-fit resolution is returned to the user.
                             One case I have used this for is to fit echelle data of late-type 
@@ -329,7 +329,8 @@ class TelluricFitter:
     """
 
     self.resolution_fit_mode=resolution_fit_mode
-    self.fit_primary = fit_primary
+    self.fit_source = fit_primary
+    self.fit_source = fit_source
     self.adjust_wave = adjust_wave
     self.continuum_fit_order = continuum_fit_order
     self.wavelength_fit_order = wavelength_fit_order
@@ -378,7 +379,7 @@ class TelluricFitter:
     fitpars, success = leastsq(self.FitErrorFunction, fitpars, diag=1.0/numpy.array(fitpars))
 
     #Finally, return the best-fit model
-    if self.fit_primary:
+    if self.fit_source:
       return self.GenerateModel(fitpars, separate_primary=True, return_resolution=return_resolution)
     else:
       return self.GenerateModel(fitpars, return_resolution=return_resolution)
