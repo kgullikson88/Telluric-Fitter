@@ -37,6 +37,7 @@ from collections import defaultdict
 import lockfile
 import struct
 import FittingUtilities
+import warnings
 import time
 
 #Dectionary giving the number to molecule name for LBLRTM
@@ -265,18 +266,19 @@ class Modeler:
     TelluricModelingDirRoot = self.TelluricModelingDirRoot
     NumRunDirs = self.NumRunDirs
     found = False
-    for i in range(1,NumRunDirs+1):
-      test = "%srundir%i/" %(TelluricModelingDirRoot, i)
-      lock = lockfile.FileLock(test)
-      if not lock.is_locked():
-        TelluricModelingDir = test
-        ModelDir = "%sOutputModels/" %TelluricModelingDir
-        lock.acquire()
-        found = True
-        break
-    if not found:
-      print "Un-locked directory not found! Waiting 10 seconds..."
-      time.sleep(10)
+    while not found:
+      for i in range(1,NumRunDirs+1):
+        test = "%srundir%i/" %(TelluricModelingDirRoot, i)
+        lock = lockfile.FileLock(test)
+        if not lock.is_locked():
+          TelluricModelingDir = test
+          ModelDir = "%sOutputModels/" %TelluricModelingDir
+          lock.acquire()
+          found = True
+          break
+      if not found:
+        print "Un-locked directory not found! Waiting 10 seconds..."
+        time.sleep(10)
     if self.debug:
       print "Telluric Modeling Directory: %s" %TelluricModelingDir
       print "Model Directory: %s" %ModelDir
