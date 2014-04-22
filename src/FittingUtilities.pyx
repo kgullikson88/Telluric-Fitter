@@ -273,8 +273,8 @@ def RebinData(data, xgrid, synphot=True):
     newdata = DataStructures.xypoint(x=xgrid)
     if grid_spacing < 2.0*data_spacing:
       # Interpolate
-      Model = spline(data.x, data.y, s=0)
-      Continuum = spline(data.x, data.cont, s=0)
+      Model = spline(data.x, data.y)
+      Continuum = spline(data.x, data.cont)
       newdata.y = Model(newdata.x)
       newdata.cont = Continuum(newdata.x)
 

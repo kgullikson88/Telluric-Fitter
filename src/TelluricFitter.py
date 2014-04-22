@@ -376,7 +376,7 @@ class TelluricFitter:
     bounds = [self.bounds[i] for i in range(len(self.parnames)) if self.fitting[i]]
     optdict = {"rhobeg": [1,5,1000.0]}
     optdict = {"eps": 5}
-    fitpars, success = leastsq(self.FitErrorFunction, fitpars, diag=1.0/numpy.array(fitpars))
+    fitpars, success = leastsq(self.FitErrorFunction, fitpars, diag=1.0/numpy.array(fitpars), epsfcn=0.001)
 
     #Finally, return the best-fit model
     if self.fit_source:
