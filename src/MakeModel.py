@@ -326,8 +326,8 @@ class Modeler:
     ModelDir = self.ModelDir
 
     #Convert from relative humidity to concentration (ppm)
-    #formulas and constants come from http://www.vaisala.com/Vaisala%20Documents/Application%20notes/Humidity_Conversion_Formulas_B210973EN-F.pdf
-    Psat = 6.1162*10**(7.5892*(temperature-273.15)/(240.71+(temperature-273.15)))
+    
+    Psat = VaporPressure(temperature)
     Pw = Psat*humidity/100.0
     h2o = Pw/(pressure - Pw)*1e6
 
@@ -497,8 +497,34 @@ class Modeler:
     return v, spectrum
 
 
-  
+def VaporPressure(T):
+  """
+    This function uses equations and constants from 
+    http://www.vaisala.com/Vaisala%20Documents/Application%20notes/Humidity_Conversion_Formulas_B210973EN-F.pdf
+    to determine the vapor pressure at the given temperature
 
+    T must be a float with the temperature (or dew point) in Kelvin
+  """
+  #Constants
+  c1, c2, c3, c4, c5, c6 = -7.85951783, 1.84408259, -11.7866497, 22.6807411, -15.9618719, 1.8022502
+  a0, a1 = -13.928169, 34.707823
+  if T > 273.15:
+    theta = 1.0 - T/647.096
+    Pw = 2.2064e5 * numpy.exp( 1.0/(1.0-theta)*( c1*theta + 
+                                               c2*theta**1.5 + 
+                                               c3*theta**3 + 
+                                               c4*theta**3.5 + 
+                                               c5*theta**4 + 
+                                               c6*theta**7.5 ) )
+  elif T > 173.15:
+    theta = T/273.16
+    Pw = 6.11657 * numpy.exp( a0*(1.0-theta**-1.5) + 
+                              a1*(1.0-theta** -1.25) )
+  else:
+    Pw = 0.0
+
+  return Pw
+  
 
 if __name__ == "__main__":
   pressure = 796.22906
