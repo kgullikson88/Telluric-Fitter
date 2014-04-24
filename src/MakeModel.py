@@ -326,7 +326,6 @@ class Modeler:
     ModelDir = self.ModelDir
 
     #Convert from relative humidity to concentration (ppm)
-    
     Psat = VaporPressure(temperature)
     Pw = Psat*humidity/100.0
     h2o = Pw/(pressure - Pw)*1e6
@@ -346,7 +345,6 @@ class Modeler:
     for mol in range(len(scale_values[2])):
       scale_values[2][mol] = (Atmosphere[upper][2][mol]-Atmosphere[lower][2][mol]) / (keys[upper]-keys[lower]) * (alt-keys[lower]) + Atmosphere[lower][2][mol]
       
-
     #Do the actual scaling
     pressure_scalefactor = (scale_values[0] - pressure) * numpy.exp(-(layers - alt)**2/(2.0*10.0**2))
     temperature_scalefactor = (scale_values[1] - temperature) * numpy.exp(-(layers - alt)**2/(2.0*10.0**2))
@@ -365,6 +363,7 @@ class Modeler:
       Atmosphere[layer][2][9] *= no2/scale_values[2][9]
       Atmosphere[layer][2][10] *= nh3/scale_values[2][10]
       Atmosphere[layer][2][11] *= hno3/scale_values[2][11]
+
 
     #Now, Read in the ParameterFile and edit the necessary parameters
     parameters = MakeTape5.ReadParFile(parameterfile=TelluricModelingDir + "ParameterFile")
@@ -524,7 +523,7 @@ def VaporPressure(T):
     Pw = 0.0
 
   return Pw
-  
+
 
 if __name__ == "__main__":
   pressure = 796.22906
