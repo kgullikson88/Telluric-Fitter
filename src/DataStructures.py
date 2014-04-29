@@ -50,7 +50,7 @@ class xypoint:
       size = err.size
       
     if x == None:
-      self.x = numpy.arange(size)
+      self.x = numpy.arange(size, dtype='float64')
     else:
       self.x = x.copy()
     if y == None:
