@@ -480,6 +480,8 @@ class TelluricFitter:
     model = self.Modeler.MakeModel(pressure, temperature, wavenum_start, wavenum_end, angle, h2o, co2, o3, n2o, co, ch4, o2, no, so2, no2, nh3, hno3, lat=lat, alt=alt, wavegrid=None, resolution=None)
     
     #Shift the x-axis, using the shift from previous iterations
+    if self.debug:
+      print "Shifting by %.4g before fitting model" %self.shift
     if self.adjust_wave == "data":
       data.x += self.shift
     elif self.adjust_wave == "model":
@@ -552,7 +554,7 @@ class TelluricFitter:
     if self.adjust_wave == "data":
       test = modelfcn(data.x - mean)
       xdiff = [test[j] - test[j-1] for j in range(1, len(test)-1)]
-      if min(xdiff) > 0 and numpy.max(test - data.x) < 0.1:
+      if min(xdiff) > 0 and numpy.max(numpy.abs(test - data.x)) < 0.1 and min(test) > 0:
         print "Adjusting data wavelengths by at most %.8g" %numpy.max(test - model.x)
         data.x = test.copy()
       else:
@@ -561,7 +563,7 @@ class TelluricFitter:
       test = modelfcn(model_original.x - mean)
       test2 = modelfcn(model.x - mean)
       xdiff = [test[j] - test[j-1] for j in range(1, len(test)-1)]
-      if min(xdiff) > 0 and numpy.max(test2 - model.x) < 0.1:
+      if min(xdiff) > 0 and numpy.max(numpy.abs(test2 - model.x)) < 0.1 and min(test) > 0:
         model.x = test2.copy()
         model_original.x = test.copy()
         print "Adjusting model wavelengths by at most %.8g" %numpy.max(test2 - model.x)
@@ -823,8 +825,11 @@ class TelluricFitter:
 
     #Subsample the model to speed this part up (it doesn't affect the accuracy much)
     xgrid = numpy.linspace(model.x[0], model.x[-1], model.size()/5)
+    print "X-axis = "
+    print xgrid
+    print model.x
     newmodel = FittingUtilities.RebinData(model, xgrid)
-
+ 
     ResolutionFitErrorBrute = lambda resolution, data, model: numpy.sum(self.ResolutionFitError(resolution, data, model))
     
     resolution = fminbound(ResolutionFitErrorBrute, self.resolution_bounds[0], self.resolution_bounds[1], xtol=1, args=(data,newmodel))
