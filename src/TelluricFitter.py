@@ -563,7 +563,7 @@ class TelluricFitter:
       test = modelfcn(model_original.x - mean)
       test2 = modelfcn(model.x - mean)
       xdiff = [test[j] - test[j-1] for j in range(1, len(test)-1)]
-      if min(xdiff) > 0 and numpy.max(numpy.abs(test2 - model.x)) < 0.1 and min(test) > 0:
+      if min(xdiff) > 0 and numpy.max(numpy.abs(test2 - model.x)) < 0.1 and min(test) > 0 and abs(test[0] - data.x[0]) < 50 and abs(test[-1] - data.x[-1]) < 50:
         model.x = test2.copy()
         model_original.x = test.copy()
         print "Adjusting model wavelengths by at most %.8g" %numpy.max(test2 - model.x)
