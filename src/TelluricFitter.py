@@ -832,10 +832,9 @@ class TelluricFitter:
     print "Fitting Resolution"
 
     #Subsample the model to speed this part up (it doesn't affect the accuracy much)
-    xgrid = numpy.linspace(model.x[0], model.x[-1], model.size()/5)
-    print "X-axis = "
-    print xgrid
-    print model.x
+    dx = (data.x[1] - data.x[0])/3.0
+    xgrid = numpy.arange(model.x[0], model.x[-1]+dx, dx)
+    #xgrid = numpy.linspace(model.x[0], model.x[-1], model.size()/5)
     newmodel = FittingUtilities.RebinData(model, xgrid)
  
     ResolutionFitErrorBrute = lambda resolution, data, model: numpy.sum(self.ResolutionFitError(resolution, data, model))
