@@ -318,12 +318,18 @@ class Modeler:
     self.FindWorkingDirectory()
     
     #Make the class variables local
-    Atmosphere = self.Atmosphere
     TelluricModelingDir = self.TelluricModelingDir
     debug = self.debug
     lock = self.lock
     layers = numpy.array(self.layers)
     ModelDir = self.ModelDir
+
+    #Make a deep copy of atmosphere so that I don't repeatedly modify it
+    Atmosphere = {}
+    a = {}
+    for key in self.Atmosphere:
+      Atmosphere[key] = list(self.Atmosphere[key])
+    
 
     #Convert from relative humidity to concentration (ppm)
     Psat = VaporPressure(temperature)

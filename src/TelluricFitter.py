@@ -378,6 +378,14 @@ class TelluricFitter:
     optdict = {"eps": 5}
     fitpars, success = leastsq(self.FitErrorFunction, fitpars, diag=1.0/numpy.array(fitpars), epsfcn=0.001)
 
+    #Save the best-fit values
+    idx = 0
+    for i in range(len(self.parnames)):
+      if self.fitting[i]:
+        self.const_pars[i] = fitpars[idx]
+        idx += 1
+        
+
     #Finally, return the best-fit model
     if self.fit_source:
       return self.GenerateModel(fitpars, separate_primary=True, return_resolution=return_resolution)
