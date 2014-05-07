@@ -217,6 +217,13 @@ class Modeler:
       else:
         mipas.append(Atmosphere[layer][profilenum][molnum])
 
+    #Check if the profile value is near 0 for the last few entries.
+    #This has happened with GDAS profiles that report the dew point
+    #near absolute zero when it doesn't get a measurement
+    while abs(profile_value[-1]) < 1:
+      profile_height = profile_height[:-1]
+      profile_value = profile_value[:-1]
+
     #We now need to adjust the MIPAS profile to avoid discontinuities
     #Do so differently for layers below the profile given as compared to
     #  those above it
@@ -227,7 +234,6 @@ class Modeler:
     newprofile[:left] -= (mipas[left] - profile_fcn(layers[left])) * numpy.exp(-(layers[left] - layers[:left]))
     newprofile[right:] -= (mipas[right] - profile_fcn(layers[right])) * numpy.exp(-(layers[right:] - layers[right]))
     newprofile[left:right] = profile_fcn(layers[left:right])
-    
 
 
     #Now, put the newprofile array into Atmosphere
