@@ -185,7 +185,7 @@ def savitzky_golay(y, window_size, order, deriv=0, rate=1):
 """
   Iterative version of the savitzky-golay smoothing function
 """
-def Iterative_SV(y, window_size, order, lowreject=3, highreject=3, numiters=100, deriv=0, rate=1):
+def Iterative_SV(y, window_size, order, lowreject=3, highreject=3, numiters=100, expand=0, deriv=0, rate=1):
   done = False
   iteration = 0
   while not done and iteration < numiters:
@@ -197,6 +197,17 @@ def Iterative_SV(y, window_size, order, lowreject=3, highreject=3, numiters=100,
     sigma = numpy.std(reduced)
     mean = numpy.mean(reduced)
     badindices = numpy.where(numpy.logical_or((reduced - mean)/sigma < -lowreject, (reduced - mean)/sigma > highreject))[0]
+    
+    # Now, expand the outliers by 'expand' pixels on either 
+    exclude  = []
+    for outlier in badindices:
+      for i in range(max(0, outlier - expand), min(outlier+expand+1, reduced.size)):
+        exclude.append(i)
+
+    #Remove duplicates from 'exclude'
+    badindices = []
+    [badindices.append(i) for i in exclude if not i in badindices]
+    badindices = numpy.array(badindices)
     if badindices.size > 0:
       done = False
       y[badindices] = smoothed[badindices]
