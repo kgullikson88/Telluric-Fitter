@@ -45,13 +45,14 @@ fixed  = lambda p, x: bound((p,p), x)
 
 
 
-"""
+def CCImprove(data, model, be_safe=True, tol=0.2, debug=False):
+  """
   Improve the wavelength solution by a constant shift
   if be_safe: it will not allow the solution to change by more than tol
   tol: the largest allowable shift (in nm), if be_safe == True
+  data, model: xypoint instances of the data and model, respectively
   
-"""
-def CCImprove(data, model, be_safe=True, tol=0.2, debug=False):
+  """
   correction = data.y.size + float(numpy.searchsorted(model.x, data.x[0]))/2.0 - 1
   ycorr = numpy.correlate(data.y/data.cont-1.0, model.y/model.cont-1.0, mode="full")
   xcorr = numpy.arange(ycorr.size)
@@ -75,13 +76,16 @@ def CCImprove(data, model, be_safe=True, tol=0.2, debug=False):
     return offsets[maxindex]
  
 
-"""
+def Continuum(x, y, fitorder=3, lowreject=2, highreject=4, numiter=10000, function="poly"):
+  """
   This function fits the continuum spectrum by iteratively removing
-points too far from the mean. The defaults work well for removing telluric lines.
+  points too far from the mean. The defaults work well for removing telluric lines in
+  spectra of reasonable S/N ratio.
+
+  x/y are assumed to by numpy arrays holding the spectrum to be fit.
 
   Note: Only the 'poly' function has been tested! Change to spline with extreme caution!
-"""
-def Continuum(x, y, fitorder=3, lowreject=2, highreject=4, numiter=10000, function="poly"):
+  """
   done = False
   x2 = numpy.copy(x)
   y2 = numpy.copy(y)
@@ -107,7 +111,9 @@ def Continuum(x, y, fitorder=3, lowreject=2, highreject=4, numiter=10000, functi
 
 
 
-"""
+
+def savitzky_golay(y, window_size, order, deriv=0, rate=1):
+    """
     Smooth (and optionally differentiate) data with a Savitzky-Golay filter.
     The Savitzky-Golay filter removes high frequency noise from data.
     It has the advantage of preserving the original shape and
@@ -154,9 +160,7 @@ def Continuum(x, y, fitorder=3, lowreject=2, highreject=4, numiter=10000, functi
     .. [2] Numerical Recipes 3rd Edition: The Art of Scientific Computing
        W.H. Press, S.A. Teukolsky, W.T. Vetterling, B.P. Flannery
        Cambridge University Press ISBN-13: 9780521880688
-"""
-def savitzky_golay(y, window_size, order, deriv=0, rate=1):
-    
+    """
     import numpy as np
     from math import factorial
 
@@ -182,10 +186,11 @@ def savitzky_golay(y, window_size, order, deriv=0, rate=1):
     return np.convolve( m[::-1]/m.sum(), y, mode='valid')
 
 
-"""
-  Iterative version of the savitzky-golay smoothing function
-"""
 def Iterative_SV(y, window_size, order, lowreject=3, highreject=3, numiters=100, expand=0, deriv=0, rate=1):
+  """
+  Iterative version of the savitzky-golay smoothing function. 
+  See the documentation for savitzky_golay for details
+  """
   done = False
   iteration = 0
   while not done and iteration < numiters:
@@ -216,7 +221,9 @@ def Iterative_SV(y, window_size, order, lowreject=3, highreject=3, numiters=100,
 
 
 
-"""
+
+def FindLines(spectrum, tol=0.99, linespacing = 0.01, debug=False):
+  """
   Function to find the spectral lines, given a model spectrum
   spectrum:        An xypoint instance with the model (Must be linearly spaced!)
   tol:             The line strength needed to count the line 
@@ -224,8 +231,7 @@ def Iterative_SV(y, window_size, order, lowreject=3, highreject=3, numiters=100,
   linespacing:     The minimum spacing (nm) between two consecutive lines. 
                       FindLines will choose the strongest line if there are 
                       several too close.
-"""
-def FindLines(spectrum, tol=0.99, linespacing = 0.01, debug=False):
+  """
   #First, convert the inputs into inputs for scipy's argrelmin
   xspacing = float(max(spectrum.x) - min(spectrum.x))/float(spectrum.size())
   N = int( linespacing / xspacing + 0.5)
@@ -303,12 +309,12 @@ def RebinData(data, xgrid, synphot=True):
     return newdata
 
 
-"""
+
+def rebin_spec(wave, specin, wavnew):
+  """
   This takes in an x and y array, as well as the desired new x-array,
     and outputs the re-binned y array.
-"""
-def rebin_spec(wave, specin, wavnew):
-  
+  """
   spec = ArraySourceSpectrum(wave=wave, flux=specin)
   f = numpy.ones(len(wave))
   filt = ArraySpectralElement(wave, f)
@@ -317,16 +323,21 @@ def rebin_spec(wave, specin, wavnew):
   return obs.binflux
 
 
-"""
+
+def ReduceResolution(data,resolution, extend=True):
+  """
   This function reduces the resolution by convolving with a gaussian kernel
   It assumes constant x-spacing!
+
+  data is an xypoint instance containing the spectrum to smooth
+  resolution: a float with the detector resolution (lam/dlam)
+
   WARNING! If the wavelength range is very large, it will give incorrect
     results because it uses a single Gaussian kernel for the whole range.
     This works just fine for small wavelength ranges such as in CRIRES, 
     or with echelle spectra. If you have a large wavelength range, use
     ReduceResolution2!!
-"""
-def ReduceResolution(data,resolution, extend=True):
+  """
   #Make the gaussian kernel
   centralwavelength = (data.x[0] + data.x[-1])/2.0
   xspacing = data.x[1] - data.x[0]
@@ -402,11 +413,13 @@ cdef numpy.ndarray[DTYPE_t, ndim=1] convolve(numpy.ndarray[DTYPE_t, ndim=1] x,
   
   
 
-"""
-  This is a more accurate version of ReduceResolution. 
-    It is also a bit slower.
-"""
+
 def ReduceResolution2(data,resolution, extend=True, nsig=5):
+  """
+  This is a more accurate version of ReduceResolution. 
+    It is also a bit slower, so don't use if you don't
+    have to!
+  """
   sig1 = data.x[0]/(2.0*resolution*numpy.sqrt(2.0*numpy.log(2.0)))
   sig2 = data.x[-1]/(2.0*resolution*numpy.sqrt(2.0*numpy.log(2.0)))
   dx = data.x[1] - data.x[0]
@@ -445,10 +458,11 @@ def ReduceResolution2(data,resolution, extend=True, nsig=5):
 
   
 
-"""
-  Just a convenince fcn which combines two of the above
-"""
+
 def ReduceResolutionAndRebinData(data,resolution,xgrid):
+  """
+  Just a convenince fcn which combines two of the above functions
+  """
   data = ReduceResolution(data,resolution)
   return RebinData(data,xgrid)
 
