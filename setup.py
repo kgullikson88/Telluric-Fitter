@@ -239,11 +239,11 @@ class OnlyInstall(install):
 
 requires = ['matplotlib', 
             'numpy>=1.6', 
-	    'scipy>=0.13', 
+            'scipy>=0.13', 
             'astropy>=0.2', 
-	    'lockfile', 
-	    'pysynphot>=0.7',
-	    'fortranformat']
+            'lockfile', 
+            'pysynphot>=0.7',
+            'fortranformat']
     
 
 
@@ -251,21 +251,21 @@ requires = ['matplotlib',
 
 
 setup(name='TelFit',
-      version='0.3',
+      version='0.4',
       author='Kevin Gullikson',
       author_email='kgulliks@astro.as.utexas.edu',
       url="http://www.as.utexas.edu/~kgulliks/projects.html",
       py_modules=['TelluricFitter', 
-	          'MakeModel',
-		  'DataStructures',
-		  'MakeTape5'],
+                  'MakeModel',
+                  'DataStructures',
+                  'MakeTape5'],
       ext_modules = [Extension("FittingUtilities", ["src/FittingUtilities.pyx"],
 	                             include_dirs=[numpy.get_include()], 
 		                           extra_compile_args=["-O3", "-funroll-loops"]),
                     ],
       cmdclass={'build_ext': CustomBuildExtCommand ,
                 'FittingUtilities':build_ext,
-		'SkipLBL': OnlyInstall},
+                'SkipLBL': OnlyInstall},
       data_files = [('', ['data/MIPAS_atmosphere_profile', 
 	                        'data/ParameterFile', 
 			                    'data/TAPE5',
