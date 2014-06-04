@@ -823,49 +823,47 @@ class TelluricFitter:
 
 
 
-    def Poly(self, pars, x):
-      """
-      Generates a polynomial with the given parameters
-      for all of the x-values.
-      x is assumed to be a numpy.ndarray!
-
-      Not meant to be called directly by the user!
-      """
-      retval = numpy.zeros(x.size)
-      for i in range(len(pars)):
-        retval += pars[i]*x**i
-      return retval
-
-
-    def WavelengthErrorFunctionNew(self, pars, data, model, maxdiff=0.05):
-      """
-      Cost function for the new wavelength fitter.
-
-      Not meant to be called directly by the user!
-      """
-      dx = self.Poly(pars, data.x)
-      penalty = numpy.sum(numpy.abs(dx[numpy.abs(dx) > maxdiff]))
-      return (data.y/data.cont - model(data.x + dx))**2 + penalty
+  def Poly(self, pars, x):
+    """
+    Generates a polynomial with the given parameters
+    for all of the x-values.
+    x is assumed to be a numpy.ndarray!
+     Not meant to be called directly by the user!
+    """
+    retval = numpy.zeros(x.size)
+    for i in range(len(pars)):
+      retval += pars[i]*x**i
+    return retval
 
 
-    def FitWavelengthNew(self,data_original, telluric, fitorder=3):
-      """
-      This is a vastly simplified version of FitWavelength. 
-      It takes the same inputs and returns the same thing,
-      so is a drop-in replacement for the old FitWavelength.
+  def WavelengthErrorFunctionNew(self, pars, data, model, maxdiff=0.05):
+    """
+    Cost function for the new wavelength fitter.
+    Not meant to be called directly by the user!
+    """
+    dx = self.Poly(pars, data.x)
+    penalty = numpy.sum(numpy.abs(dx[numpy.abs(dx) > maxdiff]))
+    return (data.y/data.cont - model(data.x + dx))**2 + penalty
 
-      Instead of finding the lines, and generating a polynomial
-      to apply to the axis as x --> f(x), it fits a polynomial
-      to the delta-x. So, it fits the function for x --> x + f(x).
-      This way, we can automatically penalize large deviations in 
-      the wavelength.
-      """
-      modelfcn = spline(telluric.x, telluric.y)
-      pars = numpy.zeros(fitorder + 1)
-      output = leastsq(self.WavelengthErrorFunctionNew, pars, args=(data_original, modelfcn), full_output=True)
-      pars = output[0]
 
-      return lambda x: x - Poly(pars, x), 0
+  def FitWavelengthNew(self, data_original, telluric, fitorder=3):
+    """
+    This is a vastly simplified version of FitWavelength. 
+    It takes the same inputs and returns the same thing,
+    so is a drop-in replacement for the old FitWavelength.
+
+    Instead of finding the lines, and generating a polynomial
+    to apply to the axis as x --> f(x), it fits a polynomial
+    to the delta-x. So, it fits the function for x --> x + f(x).
+    This way, we can automatically penalize large deviations in 
+    the wavelength.
+    """
+    modelfcn = UnivariateSpline(telluric.x, telluric.y, s=0)
+    pars = numpy.zeros(fitorder + 1)
+    output = leastsq(self.WavelengthErrorFunctionNew, pars, args=(data_original, modelfcn), full_output=True)
+    pars = output[0]
+
+    return lambda x: x - self.Poly(pars, x), 0
 
 
 
