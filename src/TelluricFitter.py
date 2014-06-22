@@ -497,6 +497,7 @@ class TelluricFitter:
 
     #Save each model if debugging
     if self.debug and self.debug_level >= 5:
+      FittingUtilities.ensure_dir("Models/")
       model_name = "Models/transmission"+"-%.2f" %pressure + "-%.2f" %temperature + "-%.1f" %h2o + "-%.1f" %angle + "-%.2f" %(co2) + "-%.2f" %(o3*100) + "-%.2f" %ch4 + "-%.2f" %(co*10)
       numpy.savetxt(model_name, numpy.transpose((model.x, model.y)), fmt="%.8f")
       
@@ -560,23 +561,24 @@ class TelluricFitter:
     modelfcn, mean = self.FitWavelength(data, model.copy(), fitorder=self.wavelength_fit_order)
       
     if self.adjust_wave == "data":
-      test = modelfcn(data.x - mean)
+      test = data.x - modelfcn(data.x - mean)
       xdiff = [test[j] - test[j-1] for j in range(1, len(test)-1)]
       if min(xdiff) > 0 and numpy.max(numpy.abs(test - data.x)) < 0.1 and min(test) > 0:
-        print "Adjusting data wavelengths by at most %.8g" %numpy.max(test - model.x)
+        print "Adjusting data wavelengths by at most %.8g nm" %numpy.max(test - model.x)
         data.x = test.copy()
       else:
         print "Warning! Wavelength calibration did not succeed!"
     elif self.adjust_wave == "model":
-      test = modelfcn(model_original.x - mean)
-      test2 = modelfcn(model.x - mean)
+      test = model_original.x + modelfcn(model_original.x - mean)
+      test2 = model.x + modelfcn(model.x - mean)
       xdiff = [test[j] - test[j-1] for j in range(1, len(test)-1)]
       if min(xdiff) > 0 and numpy.max(numpy.abs(test2 - model.x)) < 0.1 and min(test) > 0 and abs(test[0] - data.x[0]) < 50 and abs(test[-1] - data.x[-1]) < 50:
-        model.x = test2.copy()
+        print "Adjusting wavelength calibration by at most %.8g nm" %max(test2 - model.x)
         model_original.x = test.copy()
-        print "Adjusting model wavelengths by at most %.8g" %numpy.max(test2 - model.x)
+        model.x = test2.copy()
       else:
         print "Warning! Wavelength calibration did not succeed!"
+        
     else:
       sys.exit("Error! adjust_wave set to an invalid value: %s" %self.adjust_wave)
 
@@ -660,10 +662,11 @@ class TelluricFitter:
     """
     cont = 1.0
     sig = 0.004
-    mu = data.x[data.y == min(data.y)]
-    depth = 1.0 - min(data.y)
+    minidx = numpy.argmin(data.y/data.cont)
+    mu = data.x[minidx]
+    depth = 1.0 - min(data.y/data.cont)
     pars = [cont, depth, mu, sig]
-    pars, success = leastsq(GaussianErrorFunction, pars, args=(data), diag=1.0/numpy.array(pars), epsfcn=1e-10)
+    pars, success = leastsq(self.GaussianErrorFunction, pars, args=(data.x, data.y/data.cont), diag=1.0/numpy.array(pars), epsfcn=1e-10)
     return pars, success
 
   
@@ -718,9 +721,9 @@ class TelluricFitter:
         if min(model.y[left:right]) < 0.05:
           continue
 
-        pars, model_success = FitGaussian(model[left:right])
-        if model_success < 5 and pars[0] > 0 and pars[0] < 1:
-          model_lines.append(pars[1])
+        pars, model_success = self.FitGaussian(model[left:right])
+        if model_success < 5 and pars[1] > 0 and pars[1] < 1:
+          model_lines.append(pars[2])
         else:
           continue
 
@@ -731,9 +734,9 @@ class TelluricFitter:
         if min(data.y[left:right]/data.cont[left:right]) < 0.05:
           continue
 
-        pars, data_success = FitGaussian(data[left:right])
-        if data_success < 5 and pars[0] > 0 and pars[0] < 1:
-          dx.append(pars[1] - model_lines[-1])
+        pars, data_success = self.FitGaussian(data[left:right])
+        if data_success < 5 and pars[1] > 0 and pars[1] < 1:
+          dx.append(pars[2] - model_lines[-1])
         else:
           model_lines.pop()
 
@@ -774,11 +777,13 @@ class TelluricFitter:
       
     #Iteratively fit with sigma-clipping
     done = False
+    iternum = 0
+    mean = numpy.mean(data.x)
     while not done and len(model_lines) >= fitorder and iternum < numiters:
       iternum += 1
       done = True
-      fit = numpy.poly1d(numpy.polyfit(model_lines, dx, fitorder))
-      residuals = fit(model_lines) - dx
+      fit = numpy.poly1d(numpy.polyfit(model_lines - mean, dx, fitorder))
+      residuals = fit(model_lines - mean) - dx
       std = numpy.std(residuals)
       badindices = numpy.where(numpy.abs(residuals) > 3*std)[0]
       if 0 in badindices and keepfirst:
@@ -795,16 +800,17 @@ class TelluricFitter:
 
     if self.debug and self.debug_level >= 5:
       plt.figure(3)
-      plt.plot(model_lines, fit(model_lines) - dx, 'ro')
+      plt.plot(model_lines, fit(model_lines - mean) - dx, 'ro')
       plt.title("Residuals")
       plt.xlabel("Wavelength")
       plt.ylabel("Delta-lambda")
       plt.show()
     
-    if self.adjust_wave == "model":
-      return lambda x: x + fit(x), 0
-    else:
-      return lambda x: x - fit(x), 0
+    return fit, mean
+    #if self.adjust_wave == "model":
+    #  return lambda x: x + fit(x - mean), 0
+    #else:
+    #  return lambda x: x - fit(x - mean), 0
 
 
 

@@ -28,6 +28,7 @@ from pysynphot.spectrum import ArraySourceSpectrum, ArraySpectralElement
 cimport numpy
 cimport cython
 from libc.math cimport exp, log, sqrt
+import os
 
 DTYPE = numpy.float64
 ctypedef numpy.float64_t DTYPE_t
@@ -42,6 +43,16 @@ lbound = lambda p, x: 1e2*numpy.sqrt(p-x) + 1e-3*(p-x) if (x<p) else 0
 ubound = lambda p, x: 1e2*numpy.sqrt(x-p) + 1e-3*(x-p) if (x>p) else 0
 bound  = lambda p, x: lbound(p[0],x) + ubound(p[1],x)
 fixed  = lambda p, x: bound((p,p), x)
+
+
+
+def ensure_dir(f):
+  """
+    Ensure that a directory exists. Create if it doesn't
+  """
+  d = os.path.dirname(f)
+  if not os.path.exists(d):
+    os.makedirs(d)
 
 
 
