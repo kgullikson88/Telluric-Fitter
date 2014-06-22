@@ -497,6 +497,7 @@ class TelluricFitter:
 
     #Save each model if debugging
     if self.debug and self.debug_level >= 5:
+      FittingUtilities.ensure_dir("Models/")
       model_name = "Models/transmission"+"-%.2f" %pressure + "-%.2f" %temperature + "-%.1f" %h2o + "-%.1f" %angle + "-%.2f" %(co2) + "-%.2f" %(o3*100) + "-%.2f" %ch4 + "-%.2f" %(co*10)
       numpy.savetxt(model_name, numpy.transpose((model.x, model.y)), fmt="%.8f")
       
@@ -516,8 +517,8 @@ class TelluricFitter:
     #Reduce to initial guess resolution
     if (resolution - 10 < self.resolution_bounds[0] or resolution+10 > self.resolution_bounds[1]):
       resolution = numpy.mean(self.resolution_bounds)
-    model = FittingUtilities.ReduceResolution(model.copy(), resolution)
-    model = FittingUtilities.RebinData(model.copy(), data.x.copy())
+    model = FittingUtilities.ReduceResolution(model, resolution)
+    model = FittingUtilities.RebinData(model, data.x)
     
     
     #Shift the data (or model) by a constant offset. This gets the wavelength calibration close
@@ -528,7 +529,7 @@ class TelluricFitter:
       model_original.x -= shift
       # In this case, we need to adjust the resolution again
       model = FittingUtilities.ReduceResolution(model_original.copy(), resolution)
-      model = FittingUtilities.RebinData(model.copy(), data.x.copy())
+      model = FittingUtilities.RebinData(model, data.x)
     else:
       sys.exit("Error! adjust_wave parameter set to invalid value: %s" %self.adjust_wave)
     self.shift += shift
@@ -557,26 +558,27 @@ class TelluricFitter:
 
       
     #Fine-tune the wavelength calibration by fitting the location of several telluric lines
-    modelfcn, mean = self.FitWavelengthNew(data, model.copy(), fitorder=self.wavelength_fit_order)
+    modelfcn, mean = self.FitWavelength(data, model.copy(), fitorder=self.wavelength_fit_order)
       
     if self.adjust_wave == "data":
-      test = modelfcn(data.x - mean)
+      test = data.x - modelfcn(data.x - mean)
       xdiff = [test[j] - test[j-1] for j in range(1, len(test)-1)]
       if min(xdiff) > 0 and numpy.max(numpy.abs(test - data.x)) < 0.1 and min(test) > 0:
-        print "Adjusting data wavelengths by at most %.8g" %numpy.max(test - model.x)
+        print "Adjusting data wavelengths by at most %.8g nm" %numpy.max(test - model.x)
         data.x = test.copy()
       else:
         print "Warning! Wavelength calibration did not succeed!"
     elif self.adjust_wave == "model":
-      test = modelfcn(model_original.x - mean)
-      test2 = modelfcn(model.x - mean)
+      test = model_original.x + modelfcn(model_original.x - mean)
+      test2 = model.x + modelfcn(model.x - mean)
       xdiff = [test[j] - test[j-1] for j in range(1, len(test)-1)]
       if min(xdiff) > 0 and numpy.max(numpy.abs(test2 - model.x)) < 0.1 and min(test) > 0 and abs(test[0] - data.x[0]) < 50 and abs(test[-1] - data.x[-1]) < 50:
-        model.x = test2.copy()
+        print "Adjusting wavelength calibration by at most %.8g nm" %max(test2 - model.x)
         model_original.x = test.copy()
-        print "Adjusting model wavelengths by at most %.8g" %numpy.max(test2 - model.x)
+        model.x = test2.copy()
       else:
         print "Warning! Wavelength calibration did not succeed!"
+        
     else:
       sys.exit("Error! adjust_wave set to an invalid value: %s" %self.adjust_wave)
 
@@ -652,10 +654,23 @@ class TelluricFitter:
     """
     return self.GaussianFitFunction(x,params) - y
 
+  def FitGaussian(self, data):
+    """
+    This function fits a gaussian to a line. The input
+    should be a small segment (~0.1 nm or so), in an xypoint structure
+    Not meant to be called directly by the user!
+    """
+    cont = 1.0
+    sig = 0.004
+    minidx = numpy.argmin(data.y/data.cont)
+    mu = data.x[minidx]
+    depth = 1.0 - min(data.y/data.cont)
+    pars = [cont, depth, mu, sig]
+    pars, success = leastsq(self.GaussianErrorFunction, pars, args=(data.x, data.y/data.cont), diag=1.0/numpy.array(pars), epsfcn=1e-10)
+    return pars, success
 
   
-  
-  def FitWavelength(self, data_original, telluric, tol=0.05, oversampling=4, fitorder=3):
+  def FitWavelength(self, data_original, telluric, tol=0.05, oversampling=4, fitorder=3, numiters=5):
     """
     Function to fine-tune the wavelength solution of a generated model
       It does so by looking for telluric lines in both the
@@ -692,87 +707,56 @@ class TelluricFitter:
   
     #Begin loop over the lines
     numlines = 0
+    model_lines = []
+    dx = []
     for line in linelist:
       if line-tol > data.x[0] and line+tol < data.x[-1]:
         numlines += 1
-        #Find line in the model
+
+        #Find line center in the model
         left = numpy.searchsorted(model.x, line - tol)
         right = numpy.searchsorted(model.x, line + tol)
-        minindex = model.y[left:right].argmin() + left
         
         #Don't use lines that are saturated
-        if model.y[minindex] < 0.05:
+        if min(model.y[left:right]) < 0.05:
           continue
 
-        mean = model.x[minindex]
-        left2 = numpy.searchsorted(model.x, mean - tol*2)
-        right2 = numpy.searchsorted(model.x, mean + tol*2)
-
-        argmodel = DataStructures.xypoint(right2 - left2)
-        argmodel.x = numpy.copy(model.x[left2:right2])
-        argmodel.y = numpy.copy(model.y[left2:right2])
+        pars, model_success = self.FitGaussian(model[left:right])
+        if model_success < 5 and pars[1] > 0 and pars[1] < 1:
+          model_lines.append(pars[2])
+        else:
+          continue
 
         #Do the same for the data
         left = numpy.searchsorted(data.x, line - tol)
         right = numpy.searchsorted(data.x, line + tol)
-        minindex = data.y[left:right].argmin() + left
 
-        if data.y[minindex]/data.cont[minindex] < 0.05:
+        if min(data.y[left:right]/data.cont[left:right]) < 0.05:
           continue
-	
-        mean = data.x[minindex]
 
-        argdata = DataStructures.xypoint(right2 - left2)
-        argdata.x = numpy.copy(data.x[left2:right2])
-        argdata.y = numpy.copy(data.y[left2:right2]/data.cont[left2:right2])
+        pars, data_success = self.FitGaussian(data[left:right])
+        if data_success < 5 and pars[1] > 0 and pars[1] < 1:
+          dx.append(pars[2] - model_lines[-1])
+        else:
+          model_lines.pop()
 
-        #Fit argdata to gaussian to find the actual line location:
-        cont = 1.0
-        depth = cont - argdata.y[argdata.y.size/2]
-        mu = argdata.x[argdata.x.size/2]
-        sig = 0.025
-        params = [cont, depth, mu, sig]
-        params,success = leastsq(self.GaussianErrorFunction, params, args=(argdata.x, argdata.y))
-        mean = params[2]
-        
-        #Do a cross-correlation, to get the wavelength solution close
-        ycorr = scipy.correlate(argdata.y-1.0, argmodel.y-1.0, mode="full")
-        xcorr = numpy.arange(ycorr.size)
-        maxindex = ycorr.argmax()
-        lags = xcorr - (argdata.x.size-1)
-        distancePerLag = (argdata.x[-1] - argdata.x[0])/float(argdata.x.size)
-        offsets = -lags*distancePerLag
-        shift = offsets[maxindex]
+    #Convert the lists to numpy arrays        
+    model_lines = numpy.array(model_lines)
+    dx = numpy.array(dx)
 
-        #Now, fit the shift more precisely
-        shift, success = leastsq(self.WavelengthErrorFunction, shift, args=(argdata, argmodel))
-        
-        if self.debug and self.debug_level >= 3:
-          print argdata.x[0], argdata.x[-1], argdata.x.size
-          print "wave: ", mean, "\tshift: ", shift, "\tsuccess = ", success
-          plt.figure(1)
-          plt.plot(model.x[left:right]-shift, model.y[left:right])
-          plt.plot(argmodel.x, argmodel.y)
-          plt.plot(argdata.x, argdata.y)
-          
-        if (success < 5):
-          old.append(mean)
-          if self.adjust_wave == "data":
-            new.append(mean + float(shift))
-          elif self.adjust_wave == "model":
-            new.append(mean - float(shift))
-          else:
-            sys.exit("Error! adjust_wave set to an invalid value: %s" %self.adjust_wave)
+    #Remove any points with very large shifts:
+    badindices = numpy.where(numpy.abs(dx) > 0.015)[0]
+    model_lines = numpy.delete(model_lines, badindices)
+    dx = numpy.delete(dx, badindices)
 
-            
-    if self.debug and self.debug_level >= 3:
+    if self.debug and self.debug_level >= 5:
       plt.figure(2)
-      plt.plot(old, new, 'ro')
+      plt.plot(model_lines, dx, 'ro')
       plt.title("Fitted Line shifts")
       plt.xlabel("Old Wavelength")
       plt.ylabel("New Wavelength")
 
-    numlines = len(old)
+    numlines = len(model_lines)
     print "Found %i lines in this order" %numlines
     fit = lambda x: x
     mean = 0.0
@@ -782,43 +766,51 @@ class TelluricFitter:
     #Check if there is a large gap between the telluric lines and the end of the order (can cause the fit to go crazy)
     keepfirst = False
     keeplast = False
-    if min(old) - data.x[0] > 0.5:
-      old.insert(0, data.x[0])
-      new.insert(0, data.x[0])
+    if min(model_lines) - data.x[0] > 0.5:
+      model_lines = numpy.r_[data.x[0], model_lines]
+      dx = numpy.r_[0.0, dx]
       keepfirst = True
-    if data.x[-1] - max(old) > 0.5:
-      old.append(data.x[-1])
-      new.append(data.x[-1])
+    if data.x[-1] - max(model_lines) > 0.5:
+      model_lines = numpy.r_[model_lines, data.x[-1]]
+      dx = numpy.r_[dx, 0.0]
       keeplast = True
       
-    #Iteratively fit to a cubic with sigma-clipping
+    #Iteratively fit with sigma-clipping
     done = False
-    while not done and len(old) >= fitorder:
+    iternum = 0
+    mean = numpy.mean(data.x)
+    while not done and len(model_lines) >= fitorder and iternum < numiters:
+      iternum += 1
       done = True
-      mean = numpy.mean(old)
-      fit = numpy.poly1d(numpy.polyfit(old - mean, new, fitorder))
-      residuals = fit(old - mean) - new
+      fit = numpy.poly1d(numpy.polyfit(model_lines - mean, dx, fitorder))
+      residuals = fit(model_lines - mean) - dx
       std = numpy.std(residuals)
-      badindices = numpy.where(numpy.logical_or(residuals > 2*std, residuals < -2*std))[0]
-      for badindex in badindices[::-1]:
-        if (badindex == 0 and keepfirst) or (badindex == len(residuals)-1 and keeplast):
-          continue
-        del old[badindex]
-        del new[badindex]
+      badindices = numpy.where(numpy.abs(residuals) > 3*std)[0]
+      if 0 in badindices and keepfirst:
+        idx = numpy.where(badindices == 0)[0]
+        badindices = numpy.delete(badindices, idx)
+      if data.size()-1 in badindices and keeplast:
+        idx = numpy.where(badindices == data.size()-1)[0]
+        badindices = numpy.delete(badindices, idx)
+      if badindices.size > 0 and model_lines.size - badindices.size > 2*fitorder:
         done = False
-    if self.debug and self.debug_level >= 3:
+        model_lines = numpy.delete(model_lines, badindices)
+        dx = numpy.delete(dx, badindices)
+
+
+    if self.debug and self.debug_level >= 5:
       plt.figure(3)
-      plt.plot(old, fit(old - mean) - new, 'ro')
+      plt.plot(model_lines, fit(model_lines - mean) - dx, 'ro')
       plt.title("Residuals")
       plt.xlabel("Wavelength")
       plt.ylabel("Delta-lambda")
-      plt.figure(4)
-      plt.plot(data_original.x, data_original.y/data_original.cont)
-      plt.plot(telluric.x, telluric.y)
-      plt.plot(fit(telluric.x-mean), telluric.y)
       plt.show()
-      
+    
     return fit, mean
+    #if self.adjust_wave == "model":
+    #  return lambda x: x + fit(x - mean), 0
+    #else:
+    #  return lambda x: x - fit(x - mean), 0
 
 
 
