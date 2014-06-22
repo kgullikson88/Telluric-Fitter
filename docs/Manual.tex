@@ -77,6 +77,20 @@ The running directories will contain symbolic links to the lblrtm code and the b
 Finally, the setup.py script will ask to append a line to your ~/.bashrc. If you install TelFit into your home directory (using the --user option of setup.py), you should let the script do the setup for you. However, if you run setup.py as super-user, you may run into permission issues, and so you should reply ``no'' to the prompt. If you say no in the prompt (or anything without a ``y'' in it), you should copy-paste the command it prints to the screen right before the prompt before attempting to use TelFit. 
 
 
+\section{Examples}
+\label{sec:examples}
+
+There are several examples included in the TelFit distribution, to make it easier to learn how to the code. Each example has a separate directory, and each directory has a README file explaining how to use the example file. The examples are enumerated below:
+
+\begin{enumerate}
+  \item Library Creation: This example demonstrates how to use the MakeModel class to just generate some telluric models. It does not do any fitting.
+
+  \item Fit Example: This example provides a simple and well-annotated code to perform a telluric fit. It plots the results at the end. It takes about 20 minutes to run on my computer.
+
+  \item Full Echelle Fit Example: This is a much more full-featured example of fitting the telluric absorption in echelle data. It includes reading in a fits file using astropy.io.fits, adjusting the atmosphere profile using a GDAS model (see Appendix), and introduces a new algorithm for fitting. Namely, it fits the water column density with a few echelle orders, fits the $O_2$ column density with different orders, and then applies the best-fit values to every echelle order. This is the algorithm I use and works well for removing telluric absorption in orders that have only very weak telluric lines.
+\end{enumerate}
+
+
 \section{Usage}
 \label{sec:usage}
 In this section, I describe the various functions available to you. Example scripts are also provided in the examples directory. 
@@ -265,7 +279,7 @@ Fit(data=None, resolution_fit_mode="gauss",
     
       \item resolution$\_$fit$\_$mode: The method to use for fitting the detector resolution. Choices are ``SVD'' or ``gauss''. SVD performs a singular value decomposition to estimate the instrumental broadening profile. The gauss mode finds the best-fit gaussian instrumental profile. SVD is liable to fit noise for weak lines and/or low S/N data, and is problematic for extremely strong lines as well. It can however be better than the gauss method for intermediate strength lines, and is a little bit faster as well.
       
-      \item fit$\_$source: If True, it will generate a savitzky-golay smoothing spline to the data after dividing by the telluric model in each iteration of the fitting loop. This will only work for very rotationally broadened spectra!
+      \item fit$\_$source: If True, it will generate a savitzky-golay smoothing spline to the data after dividing by the telluric model in each iteration of the fitting loop. This will only work for very rotationally broadened spectra! Setting this true will cause the Fit() method to return the source as a DataStructures.xypoint in addition to the best-fit model.
 
       \item return$\_$resolution: controls whether the best-fit resolution is returned to the user. One case I have used this for is to fit echelle data of late-type stars by getting all the best-fit parameters from redder orders with more telluric lines and fewer stellar lines, and then applying those atmospheric parameters to the rest of the orders.
       
