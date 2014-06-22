@@ -69,7 +69,7 @@ def GetCompilerString():
   #Next, find the fortran compiler to use
   compilers = ["ifort",
                "gfortran",
-	       "g95"]
+               "g95"]
   comp_strs = ["INTEL",
                "GNU",
 	       "G95"]

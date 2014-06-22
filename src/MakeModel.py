@@ -96,7 +96,6 @@ class Modeler:
     Atmosphere = defaultdict(list)
     indices = {}
     self.debug = debug
-    self.NumRunDirs = NumRunDirs
     self.TelluricModelingDirRoot = TelluricModelingDirRoot
 
     #Determine working directories
@@ -270,11 +269,14 @@ class Modeler:
     """
     #Determine output filename
     TelluricModelingDirRoot = self.TelluricModelingDirRoot
-    NumRunDirs = self.NumRunDirs
     found = False
+    possible_rundirs = [d for d in os.listdir(self.TelluricModelingDirRoot) if d.startswith('rundir') and "." not in d]
     while not found:
-      for i in range(1,NumRunDirs+1):
-        test = "%srundir%i/" %(TelluricModelingDirRoot, i)
+      for test in possible_rundirs:
+        test = "%s/%s" %(TelluricModelingDirRoot, test)
+        if not test.endswith("/"):
+          test = test + "/"
+
         lock = lockfile.FileLock(test)
         if not lock.is_locked():
           TelluricModelingDir = test

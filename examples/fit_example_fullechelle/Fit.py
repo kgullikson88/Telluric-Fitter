@@ -8,9 +8,7 @@ from scipy.interpolate import InterpolatedUnivariateSpline as interp
 import TelluricFitter
 import DataStructures
 from astropy import units, constants
-import HelperFunctions
 import FittingUtilities
-import GetAtmosphere
 import MakeModel
 
 # Define regions to ignore in the fit
@@ -139,6 +137,7 @@ if __name__ == "__main__":
   # Read in the fits file using astropy
   # This is not guaranteed to work!
   fname = "fitsfile.fits"
+  outfilename = "Corrected.fits"
   orders = []
   hdulist = pyfits.open(fname)
   header = hdulist[0].header
@@ -182,7 +181,7 @@ if __name__ == "__main__":
  
 
   ### ---------------------------------------------
-  ###              Main Algorithm
+  ###              Main Algorithm - Humidity fit
   ### ---------------------------------------------
     
   # Determine the H2O abundance first by fitting several orders
@@ -215,7 +214,6 @@ if __name__ == "__main__":
     waveshifts.append(fitter.shift)
     wave0.append(fitter.data.x.mean())
     h2o.append(fitter.GetValue("h2o"))
-    T.append(fitter.GetValue("temperature"))
 
     #Weight by the chi-squared value, but also weight strong lines more
     weights.append((1.0-min(model.y))/fitter.chisq_vals[-1])
@@ -223,7 +221,12 @@ if __name__ == "__main__":
   # Determine the average humidity (weighted)
   humidity = numpy.sum(numpy.array(h2o)*numpy.array(weights)) / numpy.sum(weights)
   fitter.AdjustValue({"h2o": humidity}) #This turns h2o off as a fitted variable!
-    
+  
+
+  ### ---------------------------------------------
+  ###              Main Algorithm - O2 fit
+  ### ---------------------------------------------
+
   # Now, determine the O2 abundance
   fitter.FitVariable({"o2": 2.12e5})
   for i in FindOrderNums(orders, [630, 690]):
@@ -255,6 +258,15 @@ if __name__ == "__main__":
   o2 = numpy.sum(o2*chi2[-2:])/numpy.sum(chi2[-2:])
   resolution = numpy.sum(resolution[:-2]*chi2[:-2])/numpy.sum(chi2[:-2])
   
+
+
+  ### ---------------------------------------------
+  ###              Main Algorithm - Application
+  ### ---------------------------------------------
+
+  #Prepare for plotting
+  fig = plt.figure()
+  ax = fig.add_subplot(111)
 
   # Finally, apply these parameters to all orders in the data
   for i, order in enumerate(orders):
@@ -309,5 +321,9 @@ if __name__ == "__main__":
       OutputFitsFileExtensions(columns, fname, outfilename, headers_info=[header_info,], mode="new")
     else:
       HelperFunctions.OutputFitsFileExtensions(columns, outfilename, outfilename, headers_info=[header_info,], mode="append")
-      
+    
+    #Plot
+    ax.plot(data.x, data.y/data.cont, 'k-')
+    ax.plot(model.x, model.y, 'r-')
+  plt.show()
       
