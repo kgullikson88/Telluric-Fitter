@@ -834,7 +834,6 @@ class TelluricFitter:
     while not done and len(model_lines) >= fitorder and iternum < numiters:
       iternum += 1
       done = True
-      print iternum, model_lines.size, dx.size
       fit = numpy.poly1d(numpy.polyfit(model_lines - mean, dx, fitorder))
       residuals = fit(model_lines - mean) - dx
       std = numpy.std(residuals)
