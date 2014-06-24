@@ -645,8 +645,8 @@ class TelluricFitter:
       else:
         return primary_star, model
     else:
-      if self.fit_source:
-        data.cont /= primary_star.y
+      #if self.fit_source:
+      #  data.cont /= primary_star.y
       if return_resolution:
         return model, resolution
       return model
