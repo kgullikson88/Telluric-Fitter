@@ -96,6 +96,8 @@ class Modeler:
     Atmosphere = defaultdict(list)
     indices = {}
     self.debug = debug
+    if not TelluricModelingDirRoot.endswith("/"):
+      TelluricModelingDirRoot = TelluricModelingDirRoot + "/"
     self.TelluricModelingDirRoot = TelluricModelingDirRoot
 
     #Determine working directories
@@ -273,7 +275,7 @@ class Modeler:
     possible_rundirs = [d for d in os.listdir(self.TelluricModelingDirRoot) if d.startswith('rundir') and "." not in d]
     while not found:
       for test in possible_rundirs:
-        test = "%s/%s" %(TelluricModelingDirRoot, test)
+        test = "%s%s" %(TelluricModelingDirRoot, test)
         if not test.endswith("/"):
           test = test + "/"
 

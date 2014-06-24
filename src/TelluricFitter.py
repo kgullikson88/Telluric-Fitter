@@ -577,7 +577,8 @@ class TelluricFitter:
     #  telluric lines, and so will get better
     data.cont = FittingUtilities.Continuum(data.x, resid, fitorder=self.continuum_fit_order, lowreject=2, highreject=3)
     
-    if separate_primary:
+    if separate_primary or self.fit_source:
+      print "Generating Primary star model"
       primary_star = data.copy()
       primary_star.y = FittingUtilities.Iterative_SV(resid/data.cont, 61, 4, lowreject=2, highreject=3)
       data.cont *= primary_star.y
@@ -643,9 +644,10 @@ class TelluricFitter:
         return primary_star, model, resolution
       else:
         return primary_star, model
-    elif return_resolution:
-      return model, resolution
     else:
+      data.cont /= primary_star.y
+      if return_resolution:
+        return model, resolution
       return model
 
 

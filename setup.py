@@ -188,9 +188,9 @@ def MakeLBLRTM():
     subprocess.check_call(["ln", "-s", "%s/lblrtm/%s" %(os.getcwd(), lblrtm_ex), "%s/lblrtm" %directory])
 
     #Make sure the permissions are correct:
-    subprocess.check_call(["chmod", "777", "%s/" %directory])
-    cmd = "chmod 777 %s/*" %directory
-    subprocess.check_call(cmd, shell=True)
+    subprocess.check_call(["chmod", "-R", "777", "%s/" %directory])
+    #cmd = "chmod 777 %s/*" %directory
+    #subprocess.check_call(cmd, shell=True)
     #subprocess.check_call(["chmod", "777", "%s/*" %directory])
 
 
