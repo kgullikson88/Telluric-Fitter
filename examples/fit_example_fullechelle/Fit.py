@@ -320,7 +320,7 @@ if __name__ == "__main__":
     if i == 0:
       OutputFitsFileExtensions(columns, fname, outfilename, headers_info=[header_info,], mode="new")
     else:
-      HelperFunctions.OutputFitsFileExtensions(columns, outfilename, outfilename, headers_info=[header_info,], mode="append")
+      OutputFitsFileExtensions(columns, outfilename, outfilename, headers_info=[header_info,], mode="append")
     
     #Plot
     ax.plot(data.x, data.y/data.cont, 'k-')

@@ -8,3 +8,4 @@ dist*
 src/TelFit.egg-info
 *.aux
 *.log
+examples/fit_example_fullechelle/Corrected.fits

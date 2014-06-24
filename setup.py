@@ -189,7 +189,9 @@ def MakeLBLRTM():
 
     #Make sure the permissions are correct:
     subprocess.check_call(["chmod", "777", "%s/" %directory])
-    subprocess.check_call(["chmod", "777", "%s/*" %directory])
+    cmd = "chmod 777 %s/*" %directory
+    subprocess.check_call(cmd, shell=True)
+    #subprocess.check_call(["chmod", "777", "%s/*" %directory])
 
 
   #Finally, we need to set the environment variable TELLURICMODELING.
@@ -251,7 +253,7 @@ requires = ['matplotlib',
 
 
 setup(name='TelFit',
-      version='0.4',
+      version='1.0',
       author='Kevin Gullikson',
       author_email='kgulliks@astro.as.utexas.edu',
       url="http://www.as.utexas.edu/~kgulliks/projects.html",

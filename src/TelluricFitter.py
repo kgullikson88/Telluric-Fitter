@@ -1,5 +1,4 @@
 """
-   y0. 26539.  -47.9 -273.1    81.8    15.3
 Telluric Fitter "TelFit"
 =====================================================
 This module provides the 'TelluricFitter' class, used
@@ -104,6 +103,8 @@ class TelluricFitter:
     outfile.close()
 
 
+### -----------------------------------------------
+
     
   def DisplayVariables(self, fitonly=False):
     """
@@ -122,6 +123,10 @@ class TelluricFitter:
           print "%.15s\t%.5g\t\t%s" %(self.parnames[i].ljust(15), self.const_pars[i], self.fitting[i])
 
 
+
+### -----------------------------------------------
+
+
   def FitVariable(self, vardict):
     """
     Add one or more variables to the list being fit. 
@@ -138,6 +143,9 @@ class TelluricFitter:
         print "Error! Bad parameter name given. Currently available are: "
         self.DisplayVariables()
         raise ValueError
+
+
+### -----------------------------------------------
 
         
   
@@ -158,6 +166,9 @@ class TelluricFitter:
         raise ValueError
 
 
+### -----------------------------------------------
+
+
   def GetValue(self, variable):
     """
     Returns the value of the variable given.
@@ -170,6 +181,9 @@ class TelluricFitter:
       print "Error! Bad parameter name given (%s)." %(variable)
       print "Currently available parameter names are: "
       self.DisplayVariables()
+
+
+### -----------------------------------------------
 
 
   
@@ -189,6 +203,9 @@ class TelluricFitter:
         print "Error! Bad parameter name given. Currently available are: "
         self.DisplayVariables()
         raise ValueError
+
+
+### -----------------------------------------------
 
 
   
@@ -225,6 +242,9 @@ class TelluricFitter:
       raise ValueError("Error! Unrecognized input to TelluricFitter.SetObservatory()")
     
 
+
+### -----------------------------------------------
+
   
   def ImportData(self, data):
     """
@@ -235,6 +255,9 @@ class TelluricFitter:
       raise TypeError( "ImportData Error! Given data is not a DataStructures.xypoint structure!" )
     self.data = data.copy()
     return
+
+
+### -----------------------------------------------
 
 
 
@@ -254,6 +277,9 @@ class TelluricFitter:
     """
     self.Modeler.EditProfile(profilename, profile_height, profile_value)
     
+
+
+### -----------------------------------------------
   
   
   def IgnoreRegions(self, region):
@@ -282,7 +308,9 @@ class TelluricFitter:
     return
 
 
-
+### -----------------------------------------------
+###         Main Fit Function!
+### -----------------------------------------------
   
   def Fit(self, data=None, resolution_fit_mode="gauss", fit_primary=False, fit_source=False, return_resolution=False, adjust_wave="model", continuum_fit_order=7, wavelength_fit_order=3):
     """
@@ -394,6 +422,9 @@ class TelluricFitter:
     
 
 
+### -----------------------------------------------
+
+
   
   def FitErrorFunction(self, fitpars):
     """
@@ -437,6 +468,9 @@ class TelluricFitter:
     return return_array
 
 
+
+
+### -----------------------------------------------
 
 
   
@@ -615,7 +649,10 @@ class TelluricFitter:
       return model
 
 
-  
+
+### -----------------------------------------------
+### Several functions for refining the wavelength calibration
+### -----------------------------------------------
   
   def WavelengthErrorFunction(self, shift, data, model):
     """
@@ -635,6 +672,9 @@ class TelluricFitter:
     return returnvec
 
 
+### -----------------------------------------------
+
+
   def GaussianFitFunction(self, x,params):
     """
     Generate a gaussian absorption line. Not meant to be called
@@ -647,12 +687,18 @@ class TelluricFitter:
     return cont - depth*numpy.exp(-(x-mu)**2/(2*sig**2))
 
 
+### -----------------------------------------------
+
+
   def GaussianErrorFunction(self, params, x, y):
     """
     Error function for the scipy.minimize fitters. Not meant to be
     called directly by the user!
     """
     return self.GaussianFitFunction(x,params) - y
+
+
+### -----------------------------------------------
 
   def FitGaussian(self, data):
     """
@@ -669,8 +715,11 @@ class TelluricFitter:
     pars, success = leastsq(self.GaussianErrorFunction, pars, args=(data.x, data.y/data.cont), diag=1.0/numpy.array(pars), epsfcn=1e-10)
     return pars, success
 
+
+### -----------------------------------------------
+
   
-  def FitWavelength(self, data_original, telluric, tol=0.05, oversampling=4, fitorder=3, numiters=5):
+  def FitWavelength(self, data_original, telluric, tol=0.05, oversampling=4, fitorder=3, numiters=10):
     """
     Function to fine-tune the wavelength solution of a generated model
       It does so by looking for telluric lines in both the
@@ -732,6 +781,7 @@ class TelluricFitter:
         right = numpy.searchsorted(data.x, line + tol)
 
         if min(data.y[left:right]/data.cont[left:right]) < 0.05:
+          model_lines.pop()
           continue
 
         pars, data_success = self.FitGaussian(data[left:right])
@@ -766,11 +816,11 @@ class TelluricFitter:
     #Check if there is a large gap between the telluric lines and the end of the order (can cause the fit to go crazy)
     keepfirst = False
     keeplast = False
-    if min(model_lines) - data.x[0] > 0.5:
+    if min(model_lines) - data.x[0] > 1:
       model_lines = numpy.r_[data.x[0], model_lines]
       dx = numpy.r_[0.0, dx]
       keepfirst = True
-    if data.x[-1] - max(model_lines) > 0.5:
+    if data.x[-1] - max(model_lines) > 1:
       model_lines = numpy.r_[model_lines, data.x[-1]]
       dx = numpy.r_[dx, 0.0]
       keeplast = True
@@ -782,6 +832,7 @@ class TelluricFitter:
     while not done and len(model_lines) >= fitorder and iternum < numiters:
       iternum += 1
       done = True
+      print iternum, model_lines.size, dx.size
       fit = numpy.poly1d(numpy.polyfit(model_lines - mean, dx, fitorder))
       residuals = fit(model_lines - mean) - dx
       std = numpy.std(residuals)
@@ -807,10 +858,9 @@ class TelluricFitter:
       plt.show()
     
     return fit, mean
-    #if self.adjust_wave == "model":
-    #  return lambda x: x + fit(x - mean), 0
-    #else:
-    #  return lambda x: x - fit(x - mean), 0
+
+
+### -----------------------------------------------
 
 
 
@@ -828,6 +878,9 @@ class TelluricFitter:
     return retval
 
 
+### -----------------------------------------------
+
+
   def WavelengthErrorFunctionNew(self, pars, data, model, maxdiff=0.05):
     """
     Cost function for the new wavelength fitter.
@@ -836,6 +889,11 @@ class TelluricFitter:
     dx = self.Poly(pars, data.x)
     penalty = numpy.sum(numpy.abs(dx[numpy.abs(dx) > maxdiff]))
     return (data.y/data.cont - model(data.x + dx))**2 + penalty
+
+
+
+### -----------------------------------------------
+
 
 
   def FitWavelengthNew(self, data_original, telluric, fitorder=3):
@@ -858,6 +916,9 @@ class TelluricFitter:
     return lambda x: x - self.Poly(pars, x), 0
 
 
+### -----------------------------------------------
+###       Detector Resolution Fitter
+### -----------------------------------------------
 
   
   def FitResolution(self, data, model, resolution=75000.0):
@@ -882,6 +943,9 @@ class TelluricFitter:
     newmodel = FittingUtilities.ReduceResolution(newmodel, float(resolution))
     return FittingUtilities.RebinData(newmodel, data.x), float(resolution)
 
+
+
+### -----------------------------------------------
   
   
   def ResolutionFitError(self, resolution, data, model):
@@ -923,7 +987,9 @@ class TelluricFitter:
       raise ValueError
     return returnvec
 
-  
+
+
+### -----------------------------------------------  
 
 
   
