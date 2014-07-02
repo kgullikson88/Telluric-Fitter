@@ -427,8 +427,10 @@ class Modeler:
     #Convert from frequency to wavelength units
     wavelength = units.cm.to(units.nm)/freq
 
-    #Correct for index of refraction of air (only done approximately):
-    n = 1.00026
+    #Correct for index of refraction of air (use IAU standard conversion from
+    #  Morton, D. C. 1991, ApJS, 77, 119
+    wave_A = wavelength/10.0  #Wavelength in angstroms
+    n = 1.0 + 2.735182e-4 + 131.4182/wave_A**2 + 2.76249e8/wave_A**4
     wavelength /= n
 
     if save:

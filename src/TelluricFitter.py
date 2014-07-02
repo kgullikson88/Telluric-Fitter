@@ -60,6 +60,7 @@ from scipy import mat
 import MakeModel
 import DataStructures
 import FittingUtilities
+from functools import partial
 
 
 
@@ -786,7 +787,8 @@ class TelluricFitter:
         if min(data.y[left:right]/data.cont[left:right]) < 0.05:
           model_lines.pop()
           continue
-
+        
+        data[left:right].output("Data.txt")
         pars, data_success = self.FitGaussian(data[left:right])
         if data_success < 5 and pars[1] > 0 and pars[1] < 1:
           dx.append(pars[2] - model_lines[-1])
@@ -811,7 +813,7 @@ class TelluricFitter:
 
     numlines = len(model_lines)
     print "Found %i lines in this order" %numlines
-    fit = lambda x: x
+    fit = lambda x: 0
     mean = 0.0
     if numlines < fitorder:
       return fit, mean
@@ -898,7 +900,7 @@ class TelluricFitter:
 
 
 
-  def FitWavelengthNew(self, data_original, telluric, fitorder=3):
+  def FitWavelengthNew(self, data_original, telluric, fitorder=3, be_safe=True):
     """
     This is a vastly simplified version of FitWavelength. 
     It takes the same inputs and returns the same thing,
@@ -912,10 +914,18 @@ class TelluricFitter:
     """
     modelfcn = UnivariateSpline(telluric.x, telluric.y, s=0)
     pars = numpy.zeros(fitorder + 1)
-    output = leastsq(self.WavelengthErrorFunctionNew, pars, args=(data_original, modelfcn), full_output=True)
+    if be_safe:
+      args = (data_original, modelfcn, 0.05)
+    else:
+      args = (data_original, modelfcn, 100)
+    output = leastsq(self.WavelengthErrorFunctionNew, pars, args=args, full_output=True)
     pars = output[0]
 
-    return lambda x: x - self.Poly(pars, x), 0
+    return partial(self.Poly, pars), 0.0
+
+    #return pars
+    #return lambda x: self.Poly(pars, x), 0
+    #return lambda x: x - self.Poly(pars, x), 0
 
 
 ### -----------------------------------------------

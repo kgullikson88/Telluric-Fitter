@@ -62,13 +62,14 @@ def CCImprove(data, model, be_safe=True, tol=0.2, debug=False):
   if be_safe: it will not allow the solution to change by more than tol
   tol: the largest allowable shift (in nm), if be_safe == True
   data, model: xypoint instances of the data and model, respectively
-  
+    The model size MUST be >= the data size!
   """
-  correction = data.y.size + float(numpy.searchsorted(model.x, data.x[0]))/2.0 - 1
+  correction = data.size() + (model.size() - numpy.searchsorted(model.x, data.x[-1]))
+  #correction = data.y.size + float(numpy.searchsorted(model.x, data.x[0]))/2.0 - 1
   ycorr = numpy.correlate(data.y/data.cont-1.0, model.y/model.cont-1.0, mode="full")
   xcorr = numpy.arange(ycorr.size)
   lags = xcorr - correction
-  distancePerLag = (data.x[-1] - data.x[0])/float(data.x.size)
+  distancePerLag = (data.x[-1] - data.x[0])/(float(data.x.size) - 1.0)
   offsets = -lags*distancePerLag
   offsets = offsets[::-1]
   ycorr = ycorr[::-1]
