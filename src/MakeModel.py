@@ -429,7 +429,7 @@ class Modeler:
 
     #Correct for index of refraction of air (use IAU standard conversion from
     #  Morton, D. C. 1991, ApJS, 77, 119
-    wave_A = wavelength/10.0  #Wavelength in angstroms
+    wave_A = wavelength*units.nm.to(units.angstrom)  #Wavelength in angstroms
     n = 1.0 + 2.735182e-4 + 131.4182/wave_A**2 + 2.76249e8/wave_A**4
     wavelength /= n
 
