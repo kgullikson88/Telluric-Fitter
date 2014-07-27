@@ -48,7 +48,7 @@ Usage:
 
 
 import matplotlib.pyplot as plt
-import numpy
+import numpy as np
 import sys
 import os
 import subprocess
@@ -272,8 +272,8 @@ class TelluricFitter:
                    Should be either 'pressure', 'temperature', or
                    one of the molecules given in the MakeModel.MoleculeNumbers
                    dictionary
-    -profile_height:  A numpy array with the height in the atmosphere (in km)
-    -profile_value:   A numpy array with the value of the profile parameter at
+    -profile_height:  A np array with the height in the atmosphere (in km)
+    -profile_value:   A np array with the value of the profile parameter at
                       each height given in profile_height.
     """
     self.Modeler.EditProfile(profilename, profile_height, profile_value)
@@ -401,11 +401,11 @@ class TelluricFitter:
 
     #Perform the fit
     self.first_iteration = True
-    errfcn = lambda pars: numpy.sum(self.FitErrorFunction(pars))
+    errfcn = lambda pars: np.sum(self.FitErrorFunction(pars))
     bounds = [self.bounds[i] for i in range(len(self.parnames)) if self.fitting[i]]
     optdict = {"rhobeg": [1,5,1000.0]}
     optdict = {"eps": 5}
-    fitpars, success = leastsq(self.FitErrorFunction, fitpars, diag=1.0/numpy.array(fitpars), epsfcn=0.001)
+    fitpars, success = leastsq(self.FitErrorFunction, fitpars, diag=1.0/np.array(fitpars), epsfcn=0.001)
 
     #Save the best-fit values
     idx = 0
@@ -439,13 +439,13 @@ class TelluricFitter:
     weights = 1.0 / self.data.err**2
 
     #Find the regions to use (ignoring the parts that were defined as bad)
-    good = numpy.arange(self.data.x.size, dtype=numpy.int32)
+    good = np.arange(self.data.x.size, dtype=np.int32)
     for region in self.ignore:
       x0 = min(region)
       x1 = max(region)
       tmp1 = [self.data.x[i] in self.data.x[good] for i in range(self.data.x.size)]
-      tmp2 = numpy.logical_or(self.data.x<x0, self.data.x>x1)
-      good = numpy.where(numpy.logical_and(tmp1, tmp2))[0]
+      tmp2 = np.logical_or(self.data.x<x0, self.data.x>x1)
+      good = np.where(np.logical_and(tmp1, tmp2))[0]
 
     
     return_array = (self.data.y - self.data.cont*model.y)[good]**2 * weights[good]
@@ -460,10 +460,10 @@ class TelluricFitter:
         fit_idx += 1
       elif len(self.bounds[i]) == 2 and self.parnames[i] != "resolution":
         return_array += FittingUtilities.bound(self.bounds[i], self.const_pars[i])
-    outfile.write("%g\n" %(numpy.sum(return_array)/float(weights.size)))
+    outfile.write("%g\n" %(np.sum(return_array)/float(weights.size)))
     
-    self.chisq_vals.append(numpy.sum(return_array)/float(weights.size))
-    print "X^2 = ", numpy.sum(return_array)/float(weights.size)
+    self.chisq_vals.append(np.sum(return_array)/float(weights.size))
+    print "X^2 = ", np.sum(return_array)/float(weights.size)
     outfile.close()
     
     return return_array
@@ -534,10 +534,10 @@ class TelluricFitter:
     if self.debug and self.debug_level >= 5:
       FittingUtilities.ensure_dir("Models/")
       model_name = "Models/transmission"+"-%.2f" %pressure + "-%.2f" %temperature + "-%.1f" %h2o + "-%.1f" %angle + "-%.2f" %(co2) + "-%.2f" %(o3*100) + "-%.2f" %ch4 + "-%.2f" %(co*10)
-      numpy.savetxt(model_name, numpy.transpose((model.x, model.y)), fmt="%.8f")
+      np.savetxt(model_name, np.transpose((model.x, model.y)), fmt="%.8f")
       
     #Interpolate to constant wavelength spacing
-    xgrid = numpy.linspace(model.x[0], model.x[-1], model.x.size)
+    xgrid = np.linspace(model.x[0], model.x[-1], model.x.size)
     model = FittingUtilities.RebinData(model, xgrid)
 
     #Use nofit if you want a model with reduced resolution. Probably easier
@@ -551,7 +551,7 @@ class TelluricFitter:
   
     #Reduce to initial guess resolution
     if (resolution - 10 < self.resolution_bounds[0] or resolution+10 > self.resolution_bounds[1]):
-      resolution = numpy.mean(self.resolution_bounds)
+      resolution = np.mean(self.resolution_bounds)
     model = FittingUtilities.ReduceResolution(model, resolution)
     model = FittingUtilities.RebinData(model, data.x)
     
@@ -571,7 +571,7 @@ class TelluricFitter:
 
     
     resid = data.y/model.y
-    nans = numpy.isnan(resid)
+    nans = np.isnan(resid)
     resid[nans] = data.cont[nans]
       
     #As the model gets better, the continuum will be less affected by
@@ -590,7 +590,7 @@ class TelluricFitter:
     if self.debug and self.debug_level >= 4:
       print "Saving data and model arrays right before fitting the wavelength"
       print "  and resolution to Debug_Output1.log"
-      numpy.savetxt("Debug_Output1.log", numpy.transpose((data.x, data.y, data.cont, model.x, model.y)))
+      np.savetxt("Debug_Output1.log", np.transpose((data.x, data.y, data.cont, model.x, model.y)))
 
       
     #Fine-tune the wavelength calibration by fitting the location of several telluric lines
@@ -599,8 +599,8 @@ class TelluricFitter:
     if self.adjust_wave == "data":
       test = data.x - modelfcn(data.x - mean)
       xdiff = [test[j] - test[j-1] for j in range(1, len(test)-1)]
-      if min(xdiff) > 0 and numpy.max(numpy.abs(test - data.x)) < 0.1 and min(test) > 0:
-        print "Adjusting data wavelengths by at most %.8g nm" %numpy.max(test - model.x)
+      if min(xdiff) > 0 and np.max(np.abs(test - data.x)) < 0.1 and min(test) > 0:
+        print "Adjusting data wavelengths by at most %.8g nm" %np.max(test - model.x)
         data.x = test.copy()
       else:
         print "Warning! Wavelength calibration did not succeed!"
@@ -608,7 +608,7 @@ class TelluricFitter:
       test = model_original.x + modelfcn(model_original.x - mean)
       test2 = model.x + modelfcn(model.x - mean)
       xdiff = [test[j] - test[j-1] for j in range(1, len(test)-1)]
-      if min(xdiff) > 0 and numpy.max(numpy.abs(test2 - model.x)) < 0.1 and min(test) > 0 and abs(test[0] - data.x[0]) < 50 and abs(test[-1] - data.x[-1]) < 50:
+      if min(xdiff) > 0 and np.max(np.abs(test2 - model.x)) < 0.1 and min(test) > 0 and abs(test[0] - data.x[0]) < 50 and abs(test[-1] - data.x[-1]) < 50:
         print "Adjusting wavelength calibration by at most %.8g nm" %max(test2 - model.x)
         model_original.x = test.copy()
         model.x = test2.copy()
@@ -621,7 +621,7 @@ class TelluricFitter:
     if self.debug and self.debug_level >= 4:
       print "Saving data and model arrays after fitting the wavelength"
       print "  and before the resolution fit to Debug_Output2.log"
-      numpy.savetxt("Debug_Output2.log", numpy.transpose((data.x, data.y, data.cont, model.x, model.y)))
+      np.savetxt("Debug_Output2.log", np.transpose((data.x, data.y, data.cont, model.x, model.y)))
 
       
     #Fit instrumental resolution
@@ -664,8 +664,8 @@ class TelluricFitter:
     called directly by the user!
     """
     modelfcn = UnivariateSpline(model.x, model.y, s=0)
-    weight = 1e9 * numpy.ones(data.x.size)
-    weight[data.y > 0] = 1.0/numpy.sqrt(data.y[data.y > 0])
+    weight = 1e9 * np.ones(data.x.size)
+    weight[data.y > 0] = 1.0/np.sqrt(data.y[data.y > 0])
     weight[weight < 0.01] = 0.0
     newmodel = modelfcn(model.x + float(shift))
     if shift < 0:
@@ -688,7 +688,7 @@ class TelluricFitter:
     depth = params[1]
     mu = params[2]
     sig = params[3]
-    return cont - depth*numpy.exp(-(x-mu)**2/(2*sig**2))
+    return cont - depth*np.exp(-(x-mu)**2/(2*sig**2))
 
 
 ### -----------------------------------------------
@@ -712,11 +712,11 @@ class TelluricFitter:
     """
     cont = 1.0
     sig = 0.004
-    minidx = numpy.argmin(data.y/data.cont)
+    minidx = np.argmin(data.y/data.cont)
     mu = data.x[minidx]
     depth = 1.0 - min(data.y/data.cont)
     pars = [cont, depth, mu, sig]
-    pars, success = leastsq(self.GaussianErrorFunction, pars, args=(data.x, data.y/data.cont), diag=1.0/numpy.array(pars), epsfcn=1e-10)
+    pars, success = leastsq(self.GaussianErrorFunction, pars, args=(data.x, data.y/data.cont), diag=1.0/np.array(pars), epsfcn=1e-10)
     return pars, success
 
 
@@ -747,14 +747,14 @@ class TelluricFitter:
     if self.debug and self.debug_level >= 5:
       logfilename = "FitWavelength.log"
       print "Outputting data and telluric model to %s" %logfilename
-      numpy.savetxt(logfilename, numpy.transpose((data_original.x, data_original.y, data_original.cont, data_original.err)), fmt="%.8f")
+      np.savetxt(logfilename, np.transpose((data_original.x, data_original.y, data_original.cont, data_original.err)), fmt="%.8f")
       infile = open(logfilename, "a")
       infile.write("\n\n\n\n\n")
-      numpy.savetxt(infile, numpy.transpose((telluric.x, telluric.y)), fmt="%.8f")
+      np.savetxt(infile, np.transpose((telluric.x, telluric.y)), fmt="%.8f")
       infile.close()
 
     #Interpolate to finer spacing
-    xgrid = numpy.linspace(data_original.x[0], data_original.x[-1], data_original.x.size*oversampling)
+    xgrid = np.linspace(data_original.x[0], data_original.x[-1], data_original.x.size*oversampling)
     data = FittingUtilities.RebinData(data_original, xgrid)
     model = FittingUtilities.RebinData(telluric, xgrid)
   
@@ -767,8 +767,8 @@ class TelluricFitter:
         numlines += 1
 
         #Find line center in the model
-        left = numpy.searchsorted(model.x, line - tol)
-        right = numpy.searchsorted(model.x, line + tol)
+        left = np.searchsorted(model.x, line - tol)
+        right = np.searchsorted(model.x, line + tol)
         
         #Don't use lines that are saturated
         if min(model.y[left:right]) < 0.05:
@@ -781,8 +781,8 @@ class TelluricFitter:
           continue
 
         #Do the same for the data
-        left = numpy.searchsorted(data.x, line - tol)
-        right = numpy.searchsorted(data.x, line + tol)
+        left = np.searchsorted(data.x, line - tol)
+        right = np.searchsorted(data.x, line + tol)
 
         if min(data.y[left:right]/data.cont[left:right]) < 0.05:
           model_lines.pop()
@@ -795,14 +795,14 @@ class TelluricFitter:
         else:
           model_lines.pop()
 
-    #Convert the lists to numpy arrays        
-    model_lines = numpy.array(model_lines)
-    dx = numpy.array(dx)
+    #Convert the lists to np arrays        
+    model_lines = np.array(model_lines)
+    dx = np.array(dx)
 
     #Remove any points with very large shifts:
-    badindices = numpy.where(numpy.abs(dx) > 0.015)[0]
-    model_lines = numpy.delete(model_lines, badindices)
-    dx = numpy.delete(dx, badindices)
+    badindices = np.where(np.abs(dx) > 0.015)[0]
+    model_lines = np.delete(model_lines, badindices)
+    dx = np.delete(dx, badindices)
 
     if self.debug and self.debug_level >= 5:
       plt.figure(2)
@@ -822,35 +822,35 @@ class TelluricFitter:
     keepfirst = False
     keeplast = False
     if min(model_lines) - data.x[0] > 1:
-      model_lines = numpy.r_[data.x[0], model_lines]
-      dx = numpy.r_[0.0, dx]
+      model_lines = np.r_[data.x[0], model_lines]
+      dx = np.r_[0.0, dx]
       keepfirst = True
     if data.x[-1] - max(model_lines) > 1:
-      model_lines = numpy.r_[model_lines, data.x[-1]]
-      dx = numpy.r_[dx, 0.0]
+      model_lines = np.r_[model_lines, data.x[-1]]
+      dx = np.r_[dx, 0.0]
       keeplast = True
       
     #Iteratively fit with sigma-clipping
     done = False
     iternum = 0
-    mean = numpy.mean(data.x)
+    mean = np.mean(data.x)
     while not done and len(model_lines) >= fitorder and iternum < numiters:
       iternum += 1
       done = True
-      fit = numpy.poly1d(numpy.polyfit(model_lines - mean, dx, fitorder))
+      fit = np.poly1d(np.polyfit(model_lines - mean, dx, fitorder))
       residuals = fit(model_lines - mean) - dx
-      std = numpy.std(residuals)
-      badindices = numpy.where(numpy.abs(residuals) > 3*std)[0]
+      std = np.std(residuals)
+      badindices = np.where(np.abs(residuals) > 3*std)[0]
       if 0 in badindices and keepfirst:
-        idx = numpy.where(badindices == 0)[0]
-        badindices = numpy.delete(badindices, idx)
+        idx = np.where(badindices == 0)[0]
+        badindices = np.delete(badindices, idx)
       if data.size()-1 in badindices and keeplast:
-        idx = numpy.where(badindices == data.size()-1)[0]
-        badindices = numpy.delete(badindices, idx)
+        idx = np.where(badindices == data.size()-1)[0]
+        badindices = np.delete(badindices, idx)
       if badindices.size > 0 and model_lines.size - badindices.size > 2*fitorder:
         done = False
-        model_lines = numpy.delete(model_lines, badindices)
-        dx = numpy.delete(dx, badindices)
+        model_lines = np.delete(model_lines, badindices)
+        dx = np.delete(dx, badindices)
 
 
     if self.debug and self.debug_level >= 5:
@@ -873,10 +873,10 @@ class TelluricFitter:
     """
     Generates a polynomial with the given parameters
     for all of the x-values.
-    x is assumed to be a numpy.ndarray!
+    x is assumed to be a np.ndarray!
      Not meant to be called directly by the user!
     """
-    retval = numpy.zeros(x.size)
+    retval = np.zeros(x.size)
     for i in range(len(pars)):
       retval += pars[i]*x**i
     return retval
@@ -891,7 +891,7 @@ class TelluricFitter:
     Not meant to be called directly by the user!
     """
     dx = self.Poly(pars, data.x)
-    penalty = numpy.sum(numpy.abs(dx[numpy.abs(dx) > maxdiff]))
+    penalty = np.sum(np.abs(dx[np.abs(dx) > maxdiff]))
     return (data.y/data.cont - model(data.x + dx))**2 + penalty
 
 
@@ -913,7 +913,7 @@ class TelluricFitter:
     the wavelength.
     """
     modelfcn = UnivariateSpline(telluric.x, telluric.y, s=0)
-    pars = numpy.zeros(fitorder + 1)
+    pars = np.zeros(fitorder + 1)
     if be_safe:
       args = (data_original, modelfcn, 0.05)
     else:
@@ -943,11 +943,11 @@ class TelluricFitter:
 
     #Subsample the model to speed this part up (it doesn't affect the accuracy much)
     dx = (data.x[1] - data.x[0])/3.0
-    xgrid = numpy.arange(model.x[0], model.x[-1]+dx, dx)
-    #xgrid = numpy.linspace(model.x[0], model.x[-1], model.size()/5)
+    xgrid = np.arange(model.x[0], model.x[-1]+dx, dx)
+    #xgrid = np.linspace(model.x[0], model.x[-1], model.size()/5)
     newmodel = FittingUtilities.RebinData(model, xgrid)
  
-    ResolutionFitErrorBrute = lambda resolution, data, model: numpy.sum(self.ResolutionFitError(resolution, data, model))
+    ResolutionFitErrorBrute = lambda resolution, data, model: np.sum(self.ResolutionFitError(resolution, data, model))
     
     resolution = fminbound(ResolutionFitErrorBrute, self.resolution_bounds[0], self.resolution_bounds[1], xtol=1, args=(data,newmodel))
     
@@ -969,31 +969,31 @@ class TelluricFitter:
     if self.debug and self.debug_level >= 5:
       print "Saving inputs for R = ", resolution
       print " to Debug_ResFit.log and Debug_ResFit2.log"
-      numpy.savetxt("Debug_ResFit.log", numpy.transpose((data.x, data.y, data.cont)))
-      numpy.savetxt("Debug_Resfit2.log", numpy.transpose((model.x, model.y)))
+      np.savetxt("Debug_ResFit.log", np.transpose((data.x, data.y, data.cont)))
+      np.savetxt("Debug_Resfit2.log", np.transpose((model.x, model.y)))
     newmodel = FittingUtilities.ReduceResolution(model, resolution, extend=False)
     newmodel = FittingUtilities.RebinData(newmodel, data.x, synphot=False)
 
     #Find the regions to use (ignoring the parts that were defined as bad)
-    good = numpy.arange(self.data.x.size, dtype=numpy.int32)
+    good = np.arange(self.data.x.size, dtype=np.int32)
     for region in self.ignore:
       x0 = min(region)
       x1 = max(region)
       tmp1 = [self.data.x[i] in self.data.x[good] for i in range(self.data.x.size)]
-      tmp2 = numpy.logical_or(self.data.x<x0, self.data.x>x1)
-      good = numpy.where(numpy.logical_and(tmp1, tmp2))[0]
+      tmp2 = np.logical_or(self.data.x<x0, self.data.x>x1)
+      good = np.where(np.logical_and(tmp1, tmp2))[0]
 
     weights = 1.0/data.err**2
     returnvec = (data.y - data.cont*newmodel.y)[good]**2 * weights[good] + FittingUtilities.bound(self.resolution_bounds, resolution)
     if self.debug:
-      print "Resolution-fitting X^2 = ", numpy.sum(returnvec)/float(good.size), "at R = ", resolution
-    if numpy.isnan(numpy.sum(returnvec**2)):
+      print "Resolution-fitting X^2 = ", np.sum(returnvec)/float(good.size), "at R = ", resolution
+    if np.isnan(np.sum(returnvec**2)):
       print "Error! NaN found in ResolutionFitError!"
       outfile=open("ResolutionFitError.log", "a")
       outfile.write("#Error attempting R = %g\n" %(resolution))
-      numpy.savetxt(outfile, numpy.transpose((data.x, data.y, data.cont, newmodel.x, newmodel.y)), fmt="%.10g")
+      np.savetxt(outfile, np.transpose((data.x, data.y, data.cont, newmodel.x, newmodel.y)), fmt="%.10g")
       outfile.write("\n\n\n\n")
-      numpy.savetxt(outfile, numpy.transpose((model.x, model.y)), fmt="%.10g")
+      np.savetxt(outfile, np.transpose((model.x, model.y)), fmt="%.10g")
       outfile.write("\n\n\n\n")
       outfile.close()
       raise ValueError
@@ -1031,12 +1031,12 @@ class TelluricFitter:
     #resample data
     Spectrum = UnivariateSpline(data.x, data.y/data.cont, s=0)
     Model = UnivariateSpline(model.x, model.y, s=0)
-    xnew = numpy.linspace(data.x[0], data.x[-1], n)
+    xnew = np.linspace(data.x[0], data.x[-1], n)
     ynew = Spectrum(xnew)
     model_new = FittingUtilities.RebinData(model, xnew).y
 
     #Make 'design matrix'
-    design = numpy.zeros((n-m,m))
+    design = np.zeros((n-m,m))
     for j in range(m):
       for i in range(m/2,n-m/2-1):
         design[i-m/2,j] = model_new[i-j+m/2]
@@ -1045,12 +1045,12 @@ class TelluricFitter:
     #Do Singular Value Decomposition
     try:
       U,W,V_t = svd(design, full_matrices=False)
-    except numpy.linalg.linalg.LinAlgError:
+    except np.linalg.linalg.LinAlgError:
       outfilename = "SVD_Error.log"
       outfile = open(outfilename, "a")
-      numpy.savetxt(outfile, numpy.transpose((data.x, data.y, data.cont)))
+      np.savetxt(outfile, np.transpose((data.x, data.y, data.cont)))
       outfile.write("\n\n\n\n\n")
-      numpy.savetxt(outfile, numpy.transpose((model.x, model.y, model.cont)))
+      np.savetxt(outfile, np.transpose((model.x, model.y, model.cont)))
       outfile.write("\n\n\n\n\n")
       outfile.close()
       sys.exit("SVD did not converge! Outputting data to %s" %outfilename)
@@ -1059,31 +1059,31 @@ class TelluricFitter:
     #   U, V are orthonormal, so inversion is just their transposes
     #   W is a diagonal matrix, so its inverse is 1/W
     W1 = 1.0/W
-    U_t = numpy.transpose(U)
-    V = numpy.transpose(V_t)
+    U_t = np.transpose(U)
+    V = np.transpose(V_t)
   
     #Remove the smaller values of W
     W1[dimension:] = 0
     W2 = diagsvd(W1,m,m)
     
     #Solve for the broadening function
-    spec = numpy.transpose(mat(ynew[m/2:n-m/2-1]))
-    temp = numpy.dot(U_t, spec)
-    temp = numpy.dot(W2,temp)
-    Broadening = numpy.dot(V,temp)
+    spec = np.transpose(mat(ynew[m/2:n-m/2-1]))
+    temp = np.dot(U_t, spec)
+    temp = np.dot(W2,temp)
+    Broadening = np.dot(V,temp)
     
     #Make Broadening function a 1d array
     spacing = xnew[2] - xnew[1]
-    xnew = numpy.arange(model.x[0], model.x[-1], spacing)
+    xnew = np.arange(model.x[0], model.x[-1], spacing)
     model_new = Model(xnew)
-    Broadening = numpy.array(Broadening)[...,0]
+    Broadening = np.array(Broadening)[...,0]
     
     #Ensure that the broadening function is appropriate:
     maxindex = Broadening.argmax()
     if maxindex > m/2.0 + m/10.0 or maxindex < m/2.0 - m/10.0:
       #The maximum should be in the middle because we already did wavelength calibration!
       outfilename = "SVD_Error2.log"
-      numpy.savetxt(outfilename, numpy.transpose((Broadening, )) )
+      np.savetxt(outfilename, np.transpose((Broadening, )) )
       print "Warning! SVD Broadening function peaked at the wrong location! See SVD_Error2.log for the broadening function"
       
       idx = self.parnames.index("resolution")
@@ -1093,16 +1093,16 @@ class TelluricFitter:
       #Make broadening function from the gaussian
       centralwavelength = (data.x[0] + data.x[-1])/2.0
       FWHM = centralwavelength/resolution;
-      sigma = FWHM/(2.0*numpy.sqrt(2.0*numpy.log(2.0)))
+      sigma = FWHM/(2.0*np.sqrt(2.0*np.log(2.0)))
       left = 0
-      right = numpy.searchsorted(xnew, 10*sigma)
-      x = numpy.arange(0,10*sigma, xnew[1] - xnew[0])
-      gaussian = numpy.exp(-(x-5*sigma)**2/(2*sigma**2))
+      right = np.searchsorted(xnew, 10*sigma)
+      x = np.arange(0,10*sigma, xnew[1] - xnew[0])
+      gaussian = np.exp(-(x-5*sigma)**2/(2*sigma**2))
       return FittingUtilities.RebinData(model, data.x), [gaussian/gaussian.sum(), xnew]
       
-    elif numpy.mean(Broadening[maxindex-int(m/10.0):maxindex+int(m/10.0)]) < 3* numpy.mean(Broadening[int(m/5.0):]):
+    elif np.mean(Broadening[maxindex-int(m/10.0):maxindex+int(m/10.0)]) < 3* np.mean(Broadening[int(m/5.0):]):
       outfilename = "SVD_Error2.log"
-      numpy.savetxt(outfilename, numpy.transpose((Broadening, )) )
+      np.savetxt(outfilename, np.transpose((Broadening, )) )
       print "Warning! SVD Broadening function is not strongly peaked! See SVD_Error2.log for the broadening function"
       
       idx = self.parnames.index("resolution")
@@ -1112,31 +1112,31 @@ class TelluricFitter:
       #Make broadening function from the gaussian
       centralwavelength = (data.x[0] + data.x[-1])/2.0
       FWHM = centralwavelength/resolution;
-      sigma = FWHM/(2.0*numpy.sqrt(2.0*numpy.log(2.0)))
+      sigma = FWHM/(2.0*np.sqrt(2.0*np.log(2.0)))
       left = 0
-      right = numpy.searchsorted(xnew, 10*sigma)
-      x = numpy.arange(0,10*sigma, xnew[1] - xnew[0])
-      gaussian = numpy.exp(-(x-5*sigma)**2/(2*sigma**2))
+      right = np.searchsorted(xnew, 10*sigma)
+      x = np.arange(0,10*sigma, xnew[1] - xnew[0])
+      gaussian = np.exp(-(x-5*sigma)**2/(2*sigma**2))
       return FittingUtilities.RebinData(model, data.x), [gaussian/gaussian.sum(), xnew]
     
     #If we get here, the broadening function looks okay.
     #Convolve the model with the broadening function
     model = DataStructures.xypoint(x=xnew)
-    Broadened = UnivariateSpline(xnew, numpy.convolve(model_new,Broadening, mode="same"),s=0)
+    Broadened = UnivariateSpline(xnew, np.convolve(model_new,Broadening, mode="same"),s=0)
     model.y = Broadened(model.x)
     
     #Fit the broadening function to a gaussian
     params = [0.0, -Broadening[maxindex], maxindex, 10.0]
-    params,success = leastsq(self.GaussianErrorFunction, params, args=(numpy.arange(Broadening.size), Broadening))
+    params,success = leastsq(self.GaussianErrorFunction, params, args=(np.arange(Broadening.size), Broadening))
     sigma = params[3] * (xnew[1] - xnew[0]) 
-    FWHM = sigma * 2.0*numpy.sqrt(2.0*numpy.log(2.0))
-    resolution = numpy.median(data.x) / FWHM
+    FWHM = sigma * 2.0*np.sqrt(2.0*np.log(2.0))
+    resolution = np.median(data.x) / FWHM
     #idx = self.parnames.index("resolution")
     #self.const_pars[idx] = resolution
     
     print "Approximate resolution = %g" %resolution
     
-    #x2 = numpy.arange(Broadening.size)
+    #x2 = np.arange(Broadening.size)
 
     if full_output:
       return FittingUtilities.RebinData(model, data.x), [Broadening, xnew]

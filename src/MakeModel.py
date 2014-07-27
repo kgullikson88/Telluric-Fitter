@@ -24,7 +24,7 @@
 """
 
 
-import numpy
+import numpy as np
 import sys
 import subprocess
 import scipy.interpolate
@@ -170,15 +170,15 @@ class Modeler:
   
   def EditProfile(self, profilename, profile_height, profile_value):
     """
-    This function will take a numpy array as a profile, and stitch it into the
+    This function will take a np array as a profile, and stitch it into the
       MIPAS atmosphere profile read in in __init__
 
     -profilename:  A string with the name of the profile to edit.
                    Should be either 'pressure', 'temperature', or
                    one of the molecules given in the MakeModel.MoleculeNumbers
                    dictionary
-    -profile_height:  A numpy array with the height in the atmosphere (in km)
-    -profile_value:   A numpy array with the value of the profile parameter at
+    -profile_height:  A np array with the height in the atmosphere (in km)
+    -profile_value:   A np array with the value of the profile parameter at
                       each height given in profile_height.
     """
     #Translate the (string) name of the profile to a number
@@ -208,7 +208,7 @@ class Modeler:
 
     #Okay, they gave a valid profile name. Lets grab some class variables
     Atmosphere = self.Atmosphere
-    layers = numpy.array(self.layers)
+    layers = np.array(self.layers)
 
     #Create a list of the relevant molecule profile
     mipas = []
@@ -229,11 +229,11 @@ class Modeler:
     #Do so differently for layers below the profile given as compared to
     #  those above it
     profile_fcn = scipy.interpolate.interp1d(profile_height, profile_value, kind='linear')
-    left = numpy.searchsorted(layers, profile_height[0])
-    right = numpy.searchsorted(layers, profile_height[-1]) - 1
+    left = np.searchsorted(layers, profile_height[0])
+    right = np.searchsorted(layers, profile_height[-1]) - 1
     newprofile = list(mipas)
-    newprofile[:left] -= (mipas[left] - profile_fcn(layers[left])) * numpy.exp(-(layers[left] - layers[:left]))
-    newprofile[right:] -= (mipas[right] - profile_fcn(layers[right])) * numpy.exp(-(layers[right:] - layers[right]))
+    newprofile[:left] -= (mipas[left] - profile_fcn(layers[left])) * np.exp(-(layers[left] - layers[:left]))
+    newprofile[right:] -= (mipas[right] - profile_fcn(layers[right])) * np.exp(-(layers[right:] - layers[right]))
     newprofile[left:right] = profile_fcn(layers[left:right])
 
 
@@ -313,7 +313,7 @@ class Modeler:
       lat:                    The latitude of the observatory (degrees)
       alt:                    The altitude of the observatory above sea level (km)
       wavegrid:               If given, the model will be resampled to this grid. 
-                              Should be a numpy array
+                              Should be a np array
       resolution:             If given, it will reduce the resolution by convolving
                               with a gaussian of appropriate width. Should be a float
                               with R=lam/dlam
@@ -331,7 +331,7 @@ class Modeler:
     TelluricModelingDir = self.TelluricModelingDir
     debug = self.debug
     lock = self.lock
-    layers = numpy.array(self.layers)
+    layers = np.array(self.layers)
     ModelDir = self.ModelDir
 
     #Make a deep copy of atmosphere so that I don't repeatedly modify it
@@ -350,7 +350,7 @@ class Modeler:
     #Start by scaling the abundances from those at 'alt' km
     #  (linearly interpolate)
     keys = sorted(Atmosphere.keys())
-    lower = max(0, numpy.searchsorted(keys, alt)-1)
+    lower = max(0, np.searchsorted(keys, alt)-1)
     upper = min(lower + 1, len(keys)-1)
     if lower == upper:
       raise ZeroDivisionError ("Observatory altitude of %g results in the surrounding layers being the same!" %alt)
@@ -362,8 +362,8 @@ class Modeler:
       scale_values[2][mol] = (Atmosphere[upper][2][mol]-Atmosphere[lower][2][mol]) / (keys[upper]-keys[lower]) * (alt-keys[lower]) + Atmosphere[lower][2][mol]
       
     #Do the actual scaling
-    pressure_scalefactor = (scale_values[0] - pressure) * numpy.exp(-(layers - alt)**2/(2.0*10.0**2))
-    temperature_scalefactor = (scale_values[1] - temperature) * numpy.exp(-(layers - alt)**2/(2.0*10.0**2))
+    pressure_scalefactor = (scale_values[0] - pressure) * np.exp(-(layers - alt)**2/(2.0*10.0**2))
+    temperature_scalefactor = (scale_values[1] - temperature) * np.exp(-(layers - alt)**2/(2.0*10.0**2))
     for i, layer in enumerate(layers):
       Atmosphere[layer][0] -= pressure_scalefactor[i]
       Atmosphere[layer][1] -= temperature_scalefactor[i]
@@ -387,7 +387,7 @@ class Modeler:
     parameters[49] = "%.1f" %alt
     parameters[51] = "%.5f" %angle
     parameters[17] = lowfreq
-    freq, transmission = numpy.array([]), numpy.array([])
+    freq, transmission = np.array([]), np.array([])
 
     #Need to run lblrtm several times if the wavelength range is too large.
     maxdiff = 1999.9
@@ -438,7 +438,7 @@ class Modeler:
       model_name = ModelDir + "transmission"+"-%.2f" %pressure + "-%.2f" %temperature + "-%.1f" %humidity + "-%.1f" %angle + "-%.2f" %(co2) + "-%.2f" %(o3*100) + "-%.2f" %ch4 + "-%.2f" %(co*10)
       print "All done! Output Transmission spectrum is located in the file below:"
       print model_name
-      numpy.savetxt(model_name, numpy.transpose((wavelength[::-1], transmission[::-1])), fmt="%.8g")
+      np.savetxt(model_name, np.transpose((wavelength[::-1], transmission[::-1])), fmt="%.8g")
       if libfile != None:
         infile = open(libfile, "a")
         infile.write(model_name + "\n")
@@ -496,10 +496,10 @@ class Modeler:
       else:
         break
 
-    v = numpy.arange(v1, v2, dv)
-    spectrum = numpy.array(spectrum)
+    v = np.arange(v1, v2, dv)
+    spectrum = np.array(spectrum)
     if v.size < spectrum.size:
-      v = numpy.r_[v, v2+dv]
+      v = np.r_[v, v2+dv]
     if debug:
       print "v, spec size: ", v.size, spectrum.size
 
@@ -507,9 +507,9 @@ class Modeler:
       old_v, old_spectrum = appendto[0], appendto[1]
       #Check for overlap (there shouldn't be any)
       last_v = old_v[-1]
-      firstindex = numpy.searchsorted(v, last_v)
-      v = numpy.r_[old_v, v[firstindex:]]
-      spectrum = numpy.r_[old_spectrum, spectrum[firstindex:]]
+      firstindex = np.searchsorted(v, last_v)
+      v = np.r_[old_v, v[firstindex:]]
+      spectrum = np.r_[old_spectrum, spectrum[firstindex:]]
 
     return v, spectrum
 
@@ -527,7 +527,7 @@ def VaporPressure(T):
   a0, a1 = -13.928169, 34.707823
   if T > 273.15:
     theta = 1.0 - T/647.096
-    Pw = 2.2064e5 * numpy.exp( 1.0/(1.0-theta)*( c1*theta + 
+    Pw = 2.2064e5 * np.exp( 1.0/(1.0-theta)*( c1*theta + 
                                                c2*theta**1.5 + 
                                                c3*theta**3 + 
                                                c4*theta**3.5 + 
@@ -535,7 +535,7 @@ def VaporPressure(T):
                                                c6*theta**7.5 ) )
   elif T > 173.15:
     theta = T/273.16
-    Pw = 6.11657 * numpy.exp( a0*(1.0-theta**-1.5) + 
+    Pw = 6.11657 * np.exp( a0*(1.0-theta**-1.5) + 
                               a1*(1.0-theta** -1.25) )
   else:
     Pw = 0.0

@@ -25,7 +25,7 @@
 import sys
 from fortranformat import FortranRecordWriter as writer
 from fortranformat import FortranRecordReader as reader
-from numpy import pi, cos, tan, arctan
+from np import pi, cos, tan, arctan
 
 
 """

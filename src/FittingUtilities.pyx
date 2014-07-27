@@ -17,7 +17,7 @@
     You should have received a copy of the MIT license
     along with TelFit.  If not, see <http://opensource.org/licenses/MIT>.
 """
-import numpy
+import numpy as np
 from scipy.interpolate import InterpolatedUnivariateSpline as spline
 from scipy.interpolate import UnivariateSpline as smoother
 from scipy.signal import argrelmin, fftconvolve
@@ -25,13 +25,13 @@ import DataStructures
 import matplotlib.pyplot as plt
 from pysynphot.observation import Observation
 from pysynphot.spectrum import ArraySourceSpectrum, ArraySpectralElement
-cimport numpy
+cimport numpy as np
 cimport cython
 from libc.math cimport exp, log, sqrt
 import os
 
-DTYPE = numpy.float64
-ctypedef numpy.float64_t DTYPE_t
+DTYPE = np.float64
+ctypedef np.float64_t DTYPE_t
 
 
 #Define bounding functions:
@@ -39,8 +39,8 @@ ctypedef numpy.float64_t DTYPE_t
 # upper bound:            ubound(boundary_value, parameter)
 # lower and upper bounds: bound([low, high], parameter)
 # fixed parameter:        fixed(fixed_value, parameter)
-lbound = lambda p, x: 1e2*numpy.sqrt(p-x) + 1e-3*(p-x) if (x<p) else 0
-ubound = lambda p, x: 1e2*numpy.sqrt(x-p) + 1e-3*(x-p) if (x>p) else 0
+lbound = lambda p, x: 1e2*np.sqrt(p-x) + 1e-3*(p-x) if (x<p) else 0
+ubound = lambda p, x: 1e2*np.sqrt(x-p) + 1e-3*(x-p) if (x>p) else 0
 bound  = lambda p, x: lbound(p[0],x) + ubound(p[1],x)
 fixed  = lambda p, x: bound((p,p), x)
 
@@ -64,10 +64,10 @@ def CCImprove(data, model, be_safe=True, tol=0.2, debug=False):
   data, model: xypoint instances of the data and model, respectively
     The model size MUST be >= the data size!
   """
-  correction = data.size() + (model.size() - numpy.searchsorted(model.x, data.x[-1]))
-  #correction = data.y.size + float(numpy.searchsorted(model.x, data.x[0]))/2.0 - 1
-  ycorr = numpy.correlate(data.y/data.cont-1.0, model.y/model.cont-1.0, mode="full")
-  xcorr = numpy.arange(ycorr.size)
+  correction = data.size() + (model.size() - np.searchsorted(model.x, data.x[-1]))
+  #correction = data.y.size + float(np.searchsorted(model.x, data.x[0]))/2.0 - 1
+  ycorr = np.correlate(data.y/data.cont-1.0, model.y/model.cont-1.0, mode="full")
+  xcorr = np.arange(ycorr.size)
   lags = xcorr - correction
   distancePerLag = (data.x[-1] - data.x[0])/(float(data.x.size) - 1.0)
   offsets = -lags*distancePerLag
@@ -75,8 +75,8 @@ def CCImprove(data, model, be_safe=True, tol=0.2, debug=False):
   ycorr = ycorr[::-1]
 
   if be_safe:
-    left = numpy.searchsorted(offsets, -tol)
-    right = numpy.searchsorted(offsets, tol)
+    left = np.searchsorted(offsets, -tol)
+    right = np.searchsorted(offsets, tol)
   else:
     left, right = 0, ycorr.size
     
@@ -94,29 +94,29 @@ def Continuum(x, y, fitorder=3, lowreject=2, highreject=4, numiter=10000, functi
   points too far from the mean. The defaults work well for removing telluric lines in
   spectra of reasonable S/N ratio.
 
-  x/y are assumed to by numpy arrays holding the spectrum to be fit.
+  x/y are assumed to by np arrays holding the spectrum to be fit.
 
   Note: Only the 'poly' function has been tested! Change to spline with extreme caution!
   """
   done = False
-  x2 = numpy.copy(x)
-  y2 = numpy.copy(y)
+  x2 = np.copy(x)
+  y2 = np.copy(y)
   iteration = 0
   while not done and iteration < numiter:
     numiter += 1
     done = True
     if function == "poly":
-      fit = numpy.poly1d(numpy.polyfit(x2 - x2.mean(), y2, fitorder))
+      fit = np.poly1d(np.polyfit(x2 - x2.mean(), y2, fitorder))
     elif function == "spline":
       fit = smoother(x2, y2, s=fitorder)
     residuals = y2 - fit(x2 - x2.mean())
-    mean = numpy.mean(residuals)
-    std = numpy.std(residuals)
-    badpoints = numpy.where(numpy.logical_or((residuals - mean) < -lowreject*std, residuals - mean > highreject*std))[0]
+    mean = np.mean(residuals)
+    std = np.std(residuals)
+    badpoints = np.where(np.logical_or((residuals - mean) < -lowreject*std, residuals - mean > highreject*std))[0]
     if badpoints.size > 0 and x2.size - badpoints.size > 5*fitorder:
       done = False
-      x2 = numpy.delete(x2, badpoints)
-      y2 = numpy.delete(y2, badpoints)
+      x2 = np.delete(x2, badpoints)
+      y2 = np.delete(y2, badpoints)
   return fit(x - x2.mean())
 
 
@@ -211,9 +211,9 @@ def Iterative_SV(y, window_size, order, lowreject=3, highreject=3, numiters=100,
     smoothed = savitzky_golay(y, window_size, order, deriv, rate)
       
     reduced = y/smoothed
-    sigma = numpy.std(reduced)
-    mean = numpy.mean(reduced)
-    badindices = numpy.where(numpy.logical_or((reduced - mean)/sigma < -lowreject, (reduced - mean)/sigma > highreject))[0]
+    sigma = np.std(reduced)
+    mean = np.mean(reduced)
+    badindices = np.where(np.logical_or((reduced - mean)/sigma < -lowreject, (reduced - mean)/sigma > highreject))[0]
     
     # Now, expand the outliers by 'expand' pixels on either 
     exclude  = []
@@ -224,7 +224,7 @@ def Iterative_SV(y, window_size, order, lowreject=3, highreject=3, numiters=100,
     #Remove duplicates from 'exclude'
     badindices = []
     [badindices.append(i) for i in exclude if not i in badindices]
-    badindices = numpy.array(badindices)
+    badindices = np.array(badindices)
     if badindices.size > 0:
       done = False
       y[badindices] = smoothed[badindices]
@@ -265,7 +265,7 @@ def FindLines(spectrum, tol=0.99, linespacing = 0.01, debug=False):
     plt.xlabel("Wavelength (nm)")
     plt.ylabel("Flux")
     plt.show()
-  return numpy.array(lines)
+  return np.array(lines)
 
 
 
@@ -309,14 +309,14 @@ def RebinData(data, xgrid, synphot=True):
 
     else:
       # Add up the pixels to rebin (actually re-binning).
-      left = numpy.searchsorted(data.x, (3*xgrid[0]-xgrid[1])/2.0)
+      left = np.searchsorted(data.x, (3*xgrid[0]-xgrid[1])/2.0)
       for i in range(xgrid.size-1):
-        right = numpy.searchsorted(data.x, (xgrid[i]+xgrid[i+1])/2.0)
-        newdata.y[i] = numpy.mean(data.y[left:right])
-        newdata.cont[i] = numpy.mean(data.cont[left:right])
+        right = np.searchsorted(data.x, (xgrid[i]+xgrid[i+1])/2.0)
+        newdata.y[i] = np.mean(data.y[left:right])
+        newdata.cont[i] = np.mean(data.cont[left:right])
         left = right
-      right = numpy.searchsorted(data.x, (3*xgrid[-1]-xgrid[-2])/2.0)
-      newdata.y[xgrid.size-1] = numpy.mean(data.y[left:right])
+      right = np.searchsorted(data.x, (3*xgrid[-1]-xgrid[-2])/2.0)
+      newdata.y[xgrid.size-1] = np.mean(data.y[left:right])
   
     return newdata
 
@@ -328,7 +328,7 @@ def rebin_spec(wave, specin, wavnew):
     and outputs the re-binned y array.
   """
   spec = ArraySourceSpectrum(wave=wave, flux=specin)
-  f = numpy.ones(len(wave))
+  f = np.ones(len(wave))
   filt = ArraySpectralElement(wave, f)
   obs = Observation(spec, filt, binset=wavnew, force='taper')
   
@@ -354,22 +354,22 @@ def ReduceResolution(data,resolution, extend=True):
   centralwavelength = (data.x[0] + data.x[-1])/2.0
   xspacing = data.x[1] - data.x[0]
   FWHM = centralwavelength/resolution;
-  sigma = FWHM/(2.0*numpy.sqrt(2.0*numpy.log(2.0)))
+  sigma = FWHM/(2.0*np.sqrt(2.0*np.log(2.0)))
   left = 0
-  right = numpy.searchsorted(data.x, 10*sigma)
-  x = numpy.arange(0,10*sigma, xspacing)
-  gaussian = numpy.exp(-(x-5*sigma)**2/(2*sigma**2))
+  right = np.searchsorted(data.x, 10*sigma)
+  x = np.arange(0,10*sigma, xspacing)
+  gaussian = np.exp(-(x-5*sigma)**2/(2*sigma**2))
 
   #Extend the xy axes to avoid edge-effects, if desired
   if extend:
     
     before = data.y[-gaussian.size/2+1:]
     after = data.y[:gaussian.size/2]
-    extended = numpy.r_[before, data.y, after]
+    extended = np.r_[before, data.y, after]
 
     first = data.x[0] - float(int(gaussian.size/2.0+0.5))*xspacing
     last = data.x[-1] + float(int(gaussian.size/2.0+0.5))*xspacing
-    x2 = numpy.linspace(first, last, extended.size) 
+    x2 = np.linspace(first, last, extended.size) 
     
     conv_mode = "valid"
 
@@ -385,27 +385,27 @@ def ReduceResolution(data,resolution, extend=True):
 
 
 """
-  The following is numpy code to quickly convolve a spectrum 
+  The following is np code to quickly convolve a spectrum 
     for ReduceResolution2. DO NOT CALL THIS DIRECTLY!
 """
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef numpy.ndarray[DTYPE_t, ndim=1] convolve(numpy.ndarray[DTYPE_t, ndim=1] x, 
-                                             numpy.ndarray[DTYPE_t, ndim=1] y,
-                                             numpy.ndarray[DTYPE_t, ndim=1] output,
+cdef np.ndarray[DTYPE_t, ndim=1] convolve(np.ndarray[DTYPE_t, ndim=1] x, 
+                                             np.ndarray[DTYPE_t, ndim=1] y,
+                                             np.ndarray[DTYPE_t, ndim=1] output,
                                              
                                              double R,
                                              double nsig):
   cdef int i, n, start, end, length
   cdef double dx, sigma, total, conv, g, x0
-  cdef numpy.ndarray[DTYPE_t, ndim=1] sig
+  cdef np.ndarray[DTYPE_t, ndim=1] sig
   
   dx = x[1] - x[0]    #Assumes constant x-spacing!
   
   #Determine the edges
   sig = x/(2.0*R*sqrt(2.0*log(2.0)))
-  n1 = numpy.searchsorted((x-x[0])/sig, nsig)
-  n2 = numpy.searchsorted((x-x[x.size-1])/sig, -nsig)
+  n1 = np.searchsorted((x-x[0])/sig, nsig)
+  n2 = np.searchsorted((x-x[x.size-1])/sig, -nsig)
   
   #Convolution outer loop
   for n in range(n1, n2):
@@ -432,8 +432,8 @@ def ReduceResolution2(data,resolution, extend=True, nsig=5):
     It is also a bit slower, so don't use if you don't
     have to!
   """
-  sig1 = data.x[0]/(2.0*resolution*numpy.sqrt(2.0*numpy.log(2.0)))
-  sig2 = data.x[-1]/(2.0*resolution*numpy.sqrt(2.0*numpy.log(2.0)))
+  sig1 = data.x[0]/(2.0*resolution*np.sqrt(2.0*np.log(2.0)))
+  sig2 = data.x[-1]/(2.0*resolution*np.sqrt(2.0*np.log(2.0)))
   dx = data.x[1] - data.x[0]
   n1 = int(sig1*(nsig+1)/dx + 0.5)
   n2 = int(sig2*(nsig+1)/dx + 0.5)
@@ -442,20 +442,20 @@ def ReduceResolution2(data,resolution, extend=True, nsig=5):
     #Extend array to try to remove edge effects (do so circularly)
     before = data.y[-n1:]
     after = data.y[:n2]
-    #extended = numpy.append(numpy.append(before, data.y), after)
-    extended = numpy.r_[before, data.y, after]
+    #extended = np.append(np.append(before, data.y), after)
+    extended = np.r_[before, data.y, after]
 
     first = data.x[0] - n1*dx
     last = data.x[-1] + n2*dx
-    x2 = numpy.linspace(first, last, extended.size)
-    convolved = numpy.ones(extended.size)
+    x2 = np.linspace(first, last, extended.size)
+    convolved = np.ones(extended.size)
     convolved = convolve(x2, extended, convolved, resolution, nsig)
     convolved = convolved[n1:convolved.size-n2] 
 
   else:
     extended = data.y.copy()
     x2 = data.x.copy()
-    convolved = numpy.ones(extended.size)
+    convolved = np.ones(extended.size)
     convolved = convolve(x2, extended, convolved, resolution, nsig)
     
 
