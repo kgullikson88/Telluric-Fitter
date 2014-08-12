@@ -29,6 +29,7 @@ cimport numpy as np
 cimport cython
 from libc.math cimport exp, log, sqrt
 import os
+from astropy import units as u
 
 DTYPE = np.float64
 ctypedef np.float64_t DTYPE_t
@@ -282,6 +283,12 @@ def RebinData(data, xgrid, synphot=True):
     but could cause problems.
   """
   if synphot:
+    #synphot chokes with astropy units, so remove them before proceeding
+    data, xunits, yunits = data.strip_units()
+    if isinstance(xgrid, u.Quantity):
+        xgrid = xgrid.value
+
+    #Do the actual rebinning
     newdata = DataStructures.xypoint(x=xgrid)
     newdata.y = rebin_spec(data.x, data.y, xgrid)
     newdata.cont = rebin_spec(data.x, data.cont, xgrid)
@@ -294,6 +301,12 @@ def RebinData(data, xgrid, synphot=True):
     newdata.cont[-1] = data.cont[-1]
     newdata.err[0] = data.err[0]
     newdata.err[-1] = data.err[-1]
+
+    #Re-apply units
+    newdata.x *= xunits
+    newdata.y *= yunits
+    newdata.err *= yunits
+    newdata.cont *= yunits
     return newdata
   
   else:

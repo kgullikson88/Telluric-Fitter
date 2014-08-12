@@ -19,6 +19,7 @@
 import sys
 
 import numpy as np
+from astropy import units as u
 
 
 class xypoint:
@@ -118,6 +119,23 @@ class xypoint:
             return np.array((self.x, self.y / self.cont)).transpose()
         else:
             return np.array((self.x, self.y, self.cont, self.err)).transpose()
+
+    def strip_units(self):
+        """
+        Strips units from an xypoint structure.
+
+        Returns:
+          A copy of the xypoint with no units
+          The x-units
+          the y-units
+        """
+        xunits = self.x.unit if isinstance(self.x, u.Quantity) else 1.0
+        yunits = self.y.unit if isinstance(self.y, u.Quantity) else 1.0
+        x = self.x.value if isinstance(self.x, u.Quantity) else self.x
+        y = self.y.value if isinstance(self.y, u.Quantity) else self.y
+        err = self.err.value if isinstance(self.err, u.Quantity) else self.err
+        cont = self.cont.value if isinstance(self.cont, u.Quantity) else self.cont
+        return xypoint(x=x, y=y, cont=cont, err=err), xunits, yunits
 
 
 """
