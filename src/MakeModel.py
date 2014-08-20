@@ -25,21 +25,23 @@
 
 import sys
 import subprocess
-import scipy.interpolate
-from scipy.signal import fftconvolve
 import os
 from collections import defaultdict
-import lockfile
 import struct
 import warnings
 import time
+import FittingUtilities
+import copy
 
+import scipy.interpolate
+import lockfile
 import numpy as np
 from astropy import units
-import FittingUtilities
 
 import DataStructures
 import MakeTape5
+
+
 
 
 # Dectionary giving the number to molecule name for LBLRTM
@@ -336,10 +338,7 @@ class Modeler:
         ModelDir = self.ModelDir
 
         #Make a deep copy of atmosphere so that I don't repeatedly modify it
-        Atmosphere = {}
-        a = {}
-        for key in self.Atmosphere:
-            Atmosphere[key] = list(self.Atmosphere[key])
+        Atmosphere = copy.deepcopy(self.Atmosphere)
 
 
         #Convert from relative humidity to concentration (ppm)
@@ -476,27 +475,27 @@ class Modeler:
 
         offset = 1068
         size = struct.calcsize('=ddfl')
-        pv1, pv2, pdv, np = struct.unpack('=ddfl', content[offset:offset + size])
+        pv1, pv2, pdv, numpoints = struct.unpack('=ddfl', content[offset:offset + size])
         v1 = pv1
         v2 = pv2
         dv = pdv
         if debug:
-            print 'info: ', pv1, pv2, pdv, np
-        npts = np
+            print 'info: ', pv1, pv2, pdv, numpoints
+        npts = numpoints
         spectrum = []
-        while np > 0:
+        while numpoints > 0:
             offset += size + struct.calcsize("=4f")
-            size = struct.calcsize("=%if" % np)
-            temp1 = struct.unpack("=%if" % np, content[offset:offset + size])
+            size = struct.calcsize("=%if" % numpoints)
+            temp1 = struct.unpack("=%if" % numpoints, content[offset:offset + size])
             offset += size
-            temp2 = struct.unpack("=%if" % np, content[offset:offset + size])
-            npts += np
-            junk = [spectrum.append(temp2[i]) for i in range(np)]
+            temp2 = struct.unpack("=%if" % numpoints, content[offset:offset + size])
+            npts += numpoints
+            junk = [spectrum.append(temp2[i]) for i in range(numpoints)]
 
             offset += size + 8
             size = struct.calcsize('=ddfl')
             if len(content) > offset + size:
-                pv1, pv2, pdv, np = struct.unpack('=ddfl', content[offset:offset + size])
+                pv1, pv2, pdv, numpoints = struct.unpack('=ddfl', content[offset:offset + size])
                 v2 = pv2
             else:
                 break

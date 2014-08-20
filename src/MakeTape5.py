@@ -25,8 +25,7 @@
 import sys
 
 from fortranformat import FortranRecordWriter as writer
-from fortranformat import FortranRecordReader as reader
-from np import pi, cos, tan, arctan
+from numpy import pi, cos, tan, arctan
 
 
 """
@@ -91,15 +90,15 @@ def WriteTape5(pars, atmosphere=None, output="TAPE5"):
     mpts = int(pars[15])
     npts = int(pars[16])
     outfile.write(writer("(10(4x,i1),3x,i2, 3(4x,i1),2(1x,i4))").write((
-    ihirac, ilblf4, icntnm, iaersl, iemit, iscan, ifilter, iplot, itest, iatm, imrg, ilas, iod, ixsec, mpts,
-    npts)) + "\n")
+        ihirac, ilblf4, icntnm, iaersl, iemit, iscan, ifilter, iplot, itest, iatm, imrg, ilas, iod, ixsec, mpts,
+        npts)) + "\n")
 
     if icntnm == 6:
         sys.exit("Error! icntnm = 6 not supported!")
     if iemit == 2:
         sys.exit("Error! iemit = 2 not supported!")
 
-    #Record 1.3
+    # Record 1.3
     v1 = float(pars[17])
     v2 = float(pars[18])
     sample = float(pars[19])
