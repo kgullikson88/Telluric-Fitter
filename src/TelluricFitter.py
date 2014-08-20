@@ -48,17 +48,15 @@ Usage:
 
 import sys
 import os
-import subprocess
-import scipy
+from functools import partial
+import FittingUtilities
+
 from scipy.interpolate import UnivariateSpline
-from scipy.optimize import leastsq, minimize, fminbound
+from scipy.optimize import leastsq, fminbound
 from scipy.linalg import svd, diagsvd
 from scipy import mat
-from functools import partial
-
 import matplotlib.pyplot as plt
 import numpy as np
-import FittingUtilities
 
 import MakeModel
 import DataStructures
@@ -438,12 +436,13 @@ class TelluricFitter:
 
         #Find the regions to use (ignoring the parts that were defined as bad)
         good = np.arange(self.data.x.size, dtype=np.int32)
-        for region in self.ignore:
-            x0 = min(region)
-            x1 = max(region)
-            tmp1 = [self.data.x[i] in self.data.x[good] for i in range(self.data.x.size)]
-            tmp2 = np.logical_or(self.data.x < x0, self.data.x > x1)
-            good = np.where(np.logical_and(tmp1, tmp2))[0]
+        if len(self.ignore) > 0 and all([len(region) > 0 for region in self.ignore]):
+            for region in self.ignore:
+                x0 = min(region)
+                x1 = max(region)
+                tmp1 = [self.data.x[i] in self.data.x[good] for i in range(self.data.x.size)]
+                tmp2 = np.logical_or(self.data.x < x0, self.data.x > x1)
+                good = np.where(np.logical_and(tmp1, tmp2))[0]
 
         return_array = (self.data.y - self.data.cont * model.y)[good] ** 2 * weights[good]
         #Evaluate bound conditions and output the parameter value to the logfile.
@@ -588,10 +587,10 @@ class TelluricFitter:
 
 
         #Fine-tune the wavelength calibration by fitting the location of several telluric lines
-        modelfcn, mean = self.FitWavelength(data, model.copy(), fitorder=self.wavelength_fit_order)
+        modelfcn, mean = self.FitWavelengthNew(data, model.copy(), fitorder=self.wavelength_fit_order)
 
         if self.adjust_wave == "data":
-            test = data.x - modelfcn(data.x - mean)
+            test = data.x + modelfcn(data.x - mean)
             xdiff = [test[j] - test[j - 1] for j in range(1, len(test) - 1)]
             if min(xdiff) > 0 and np.max(np.abs(test - data.x)) < 0.1 and min(test) > 0:
                 print "Adjusting data wavelengths by at most %.8g nm" % np.max(test - model.x)
@@ -599,8 +598,8 @@ class TelluricFitter:
             else:
                 print "Warning! Wavelength calibration did not succeed!"
         elif self.adjust_wave == "model":
-            test = model_original.x + modelfcn(model_original.x - mean)
-            test2 = model.x + modelfcn(model.x - mean)
+            test = model_original.x - modelfcn(model_original.x - mean)
+            test2 = model.x - modelfcn(model.x - mean)
             xdiff = [test[j] - test[j - 1] for j in range(1, len(test) - 1)]
             if min(xdiff) > 0 and np.max(np.abs(test2 - model.x)) < 0.1 and min(test) > 0 and abs(
                             test[0] - data.x[0]) < 50 and abs(test[-1] - data.x[-1]) < 50:
@@ -647,10 +646,9 @@ class TelluricFitter:
             return model
 
 
-
-        ### -----------------------------------------------
-        ### Several functions for refining the wavelength calibration
-        ### -----------------------------------------------
+    # ## -----------------------------------------------
+    ### Several functions for refining the wavelength calibration
+    ### -----------------------------------------------
 
     def WavelengthErrorFunction(self, shift, data, model):
         """
@@ -732,7 +730,7 @@ class TelluricFitter:
         old = []
         new = []
         #Find lines in the telluric model
-        linelist = FittingUtilities.FindLines(telluric, debug=self.debug, tol=0.995)
+        linelist = FittingUtilities.FindLines(telluric, debug=self.debug, tol=0.98)
         if len(linelist) < fitorder:
             fit = lambda x: x
             mean = 0.0
@@ -785,7 +783,6 @@ class TelluricFitter:
                     model_lines.pop()
                     continue
 
-                data[left:right].output("Data.txt")
                 pars, data_success = self.FitGaussian(data[left:right])
                 if data_success < 5 and pars[1] > 0 and pars[1] < 1:
                     dx.append(pars[2] - model_lines[-1])
@@ -888,7 +885,7 @@ class TelluricFitter:
         """
         dx = self.Poly(pars, data.x)
         penalty = np.sum(np.abs(dx[np.abs(dx) > maxdiff]))
-        return (data.y / data.cont - model(data.x + dx)) ** 2 + penalty
+        return (data.y / data.cont / model(data.x + dx)) ** 2 + penalty
 
 
     ### -----------------------------------------------
@@ -972,12 +969,13 @@ class TelluricFitter:
 
         #Find the regions to use (ignoring the parts that were defined as bad)
         good = np.arange(self.data.x.size, dtype=np.int32)
-        for region in self.ignore:
-            x0 = min(region)
-            x1 = max(region)
-            tmp1 = [self.data.x[i] in self.data.x[good] for i in range(self.data.x.size)]
-            tmp2 = np.logical_or(self.data.x < x0, self.data.x > x1)
-            good = np.where(np.logical_and(tmp1, tmp2))[0]
+        if len(self.ignore) > 0 and all([len(region) > 0 for region in self.ignore]):
+            for region in self.ignore:
+                x0 = min(region)
+                x1 = max(region)
+                tmp1 = [self.data.x[i] in self.data.x[good] for i in range(self.data.x.size)]
+                tmp2 = np.logical_or(self.data.x < x0, self.data.x > x1)
+                good = np.where(np.logical_and(tmp1, tmp2))[0]
 
         weights = 1.0 / data.err ** 2
         returnvec = (data.y - data.cont * newmodel.y)[good] ** 2 * weights[good] + FittingUtilities.bound(
