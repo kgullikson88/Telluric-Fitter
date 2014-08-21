@@ -70,6 +70,7 @@ def CCImprove(data, model, be_safe=True, tol=0.2, debug=False):
   ycorr = np.correlate(data.y/data.cont-1.0, model.y/model.cont-1.0, mode="full")
   xcorr = np.arange(ycorr.size)
   lags = xcorr - correction
+  lags = xcorr - xcorr.size / 2
   distancePerLag = (data.x[-1] - data.x[0])/(float(data.x.size) - 1.0)
   offsets = -lags*distancePerLag
   offsets = offsets[::-1]

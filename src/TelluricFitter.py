@@ -538,12 +538,13 @@ class TelluricFitter:
         xgrid = np.linspace(model.x[0], model.x[-1], model.x.size)
         model = FittingUtilities.RebinData(model, xgrid)
 
+        #Make a copy of the model before broadening it
+        model_original = model.copy()
+
         #Use nofit if you want a model with reduced resolution. Probably easier
         #  to go through MakeModel directly though...
         if data == None or nofit:
             return FittingUtilities.ReduceResolution(model, resolution)
-
-        model_original = model.copy()
 
         #Reduce to initial guess resolution
         if (resolution - 10 < self.resolution_bounds[0] or resolution + 10 > self.resolution_bounds[1]):
@@ -551,17 +552,18 @@ class TelluricFitter:
         model = FittingUtilities.ReduceResolution(model, resolution)
         model = FittingUtilities.RebinData(model, data.x)
 
-
         #Shift the data (or model) by a constant offset. This gets the wavelength calibration close
         shift = FittingUtilities.CCImprove(data, model, tol=0.1)
-        if self.adjust_wave == "data":
+        if self.debug:
+            print "Shifting model by {:.5g} pixels".format((shift))
+        if self.adjust_wave == "data" and shift != 0:
             data.x += shift
-        elif self.adjust_wave == "model":
+        elif self.adjust_wave == "model" and shift != 0:
             model_original.x -= shift
             # In this case, we need to adjust the resolution again
             model = FittingUtilities.ReduceResolution(model_original.copy(), resolution)
             model = FittingUtilities.RebinData(model, data.x)
-        else:
+        elif shift != 0:
             sys.exit("Error! adjust_wave parameter set to invalid value: %s" % self.adjust_wave)
         self.shift += shift
 
