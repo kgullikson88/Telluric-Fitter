@@ -942,8 +942,12 @@ class TelluricFitter:
         ResolutionFitErrorBrute = lambda resolution, data, model: np.sum(
             self.ResolutionFitError(resolution, data, model))
 
-        resolution = fminbound(ResolutionFitErrorBrute, self.resolution_bounds[0], self.resolution_bounds[1], xtol=1,
-                               args=(data, newmodel))
+        try:
+            resolution = fminbound(ResolutionFitErrorBrute, self.resolution_bounds[0], self.resolution_bounds[1], xtol=1,
+                                   args=(data, newmodel))
+        except ValueError:
+            print "ValueError encountered while fitting the detector resolution. Falling back to guess resolution!"
+
 
         print "Optimal resolution found at R = ", float(resolution)
         newmodel = FittingUtilities.ReduceResolution(newmodel, float(resolution))
