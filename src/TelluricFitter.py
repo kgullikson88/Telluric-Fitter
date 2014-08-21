@@ -568,6 +568,8 @@ class TelluricFitter:
         resid = data.y / model.y
         nans = np.isnan(resid)
         resid[nans] = data.cont[nans]
+        infs = np.isinf(resid)
+        resid[infs] = data.cont[infs]
 
         #As the model gets better, the continuum will be less affected by
         #  telluric lines, and so will get better
@@ -577,7 +579,7 @@ class TelluricFitter:
         if separate_primary or self.fit_source:
             print "Generating Primary star model"
             primary_star = data.copy()
-            primary_star.y = FittingUtilities.Iterative_SV(resid / data.cont, 61, 4, lowreject=2, highreject=3)
+            primary_star.y = FittingUtilities.Iterative_SV(resid / data.cont, 61, 4, lowreject=2, highreject=3, numiters=5)
             data.cont *= primary_star.y
 
         if self.debug and self.debug_level >= 4:
