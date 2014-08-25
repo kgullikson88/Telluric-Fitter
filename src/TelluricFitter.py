@@ -392,7 +392,6 @@ class TelluricFitter:
             return
 
         #Transform fitpars to the bounded equivalents
-        print fitpars
         i = 0
         for fitting, parameter, bound, norm in zip(self.fitting, self.const_pars, self.bounds, self.normalization):
             if fitting:
@@ -402,7 +401,6 @@ class TelluricFitter:
                     fitpars[i] = np.sqrt((fitpars[i] - bound[0] + 1)**2 - 1.0)
                 fitpars[i] /= norm
                 i += 1
-        print fitpars
 
 
         #Set up the fitting logfile and logging arrays
@@ -1334,4 +1332,7 @@ class TelluricFitter:
         :return: index of the zero crossing
         """
         signdiffs = np.sign(l[:-1]) * np.sign(l[1:])
+        if min(signdiffs) > 0.5:
+            # The broadening function never hits zero!
+            return len(l)
         return np.where(signdiffs < 0.5)[0][0] + 1
