@@ -44,6 +44,7 @@ import MakeTape5
 
 
 
+
 # Dectionary giving the number to molecule name for LBLRTM
 MoleculeNumbers = {1: "H2O",
                    2: "CO2",
@@ -369,7 +370,8 @@ class Modeler:
         pressure_scalefactor = (scale_values[0] - pressure) * np.exp(-(layers - alt) ** 2 / (2.0 * 10.0 ** 2))
         temperature_scalefactor = (scale_values[1] - temperature) * np.exp(-(layers - alt) ** 2 / (2.0 * 10.0 ** 2))
         for i, layer in enumerate(layers):
-            Atmosphere[layer][0] -= pressure_scalefactor[i]
+            # Atmosphere[layer][0] -= pressure_scalefactor[i]
+            Atmosphere[layer][0] *= pressure / scale_values[0]
             Atmosphere[layer][1] -= temperature_scalefactor[i]
             Atmosphere[layer][2][0] *= h2o / scale_values[2][0]
             Atmosphere[layer][2][1] *= co2 / scale_values[2][1]

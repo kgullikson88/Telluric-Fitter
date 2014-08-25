@@ -195,7 +195,7 @@ class TelluricFitter:
           being fit (and detector resolution)
         """
         for par in bounddict.keys():
-            if bounddict[par][1] > 100*bounddict[par][0] and bounddict[par][1] < np.inf:
+            if bounddict[par][1] > 100 * bounddict[par][0] and bounddict[par][0] != 0 and bounddict[par][1] < np.inf:
                 warnings.warn("To set only a lower limit, you should use np.inf for the upper limit!")
                 bounddict[par][1] = np.inf
             try:
