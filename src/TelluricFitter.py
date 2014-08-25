@@ -50,6 +50,7 @@ import sys
 import os
 from functools import partial
 import FittingUtilities
+import warnings
 
 from scipy.interpolate import UnivariateSpline
 from scipy.optimize import leastsq, fminbound
