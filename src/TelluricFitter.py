@@ -52,7 +52,7 @@ from functools import partial
 import FittingUtilities
 
 from scipy.interpolate import UnivariateSpline
-from scipy.optimize import leastsq, fminbound
+from scipy.optimize import leastsq, fminbound, minimize
 from scipy.linalg import svd, diagsvd
 from scipy import mat
 import matplotlib.pyplot as plt
@@ -71,8 +71,9 @@ class TelluricFitter:
         self.const_pars = [795.0, 273.0, 45.0, 50000.0, 2200.0, 2400.0,
                            50.0, 368.5, 3.9e-2, 0.32, 0.14, 1.8, 2.1e5, 1.1e-19,
                            1e-4, 1e-4, 1e-4, 5.6e-4]
-        self.bounds = [[0.0, 1e30] for par in self.parnames]  #Basically just making sure everything is > 0
+        self.bounds = [[0.0, np.inf] for par in self.parnames]  #Basically just making sure everything is > 0
         self.fitting = [False] * len(self.parnames)
+        self.normalization = [1.0 for par in self.parnames]
 
         #Latitude and altitude (to nearest km) of the observatory
         #  Defaults are for McDonald Observatory
@@ -193,6 +194,9 @@ class TelluricFitter:
           being fit (and detector resolution)
         """
         for par in bounddict.keys():
+            if bounddict[par][1] > 100*bounddict[par][0] and bounddict[par][1] < np.inf:
+                warnings.warn("To set only a lower limit, you should use np.inf for the upper limit!")
+                bounddict[par][1] = np.inf
             try:
                 idx = self.parnames.index(par)
                 self.bounds[idx] = bounddict[par]
@@ -378,10 +382,27 @@ class TelluricFitter:
 
 
         #Make fitpars array
-        fitpars = [self.const_pars[i] for i in range(len(self.parnames)) if self.fitting[i]]
+        fitpars = []
+        for i, const_par in enumerate(self.const_pars):
+            if self.fitting[i]:
+                fitpars.append(const_par)
+                self.normalization[i] = const_par
         if len(fitpars) < 1:
             print "\n\nError! Must fit at least one variable!\n\n"
             return
+
+        #Transform fitpars to the bounded equivalents
+        print fitpars
+        i = 0
+        for fitting, parameter, bound, norm in zip(self.fitting, self.const_pars, self.bounds, self.normalization):
+            if fitting:
+                if bound[1] < np.inf:
+                    fitpars[i] = np.arcsin(2.0*(fitpars[i] - bound[0])/(bound[1] - bound[0]) - 1.0)
+                else:
+                    fitpars[i] = np.sqrt((fitpars[i] - bound[0] + 1)**2 - 1.0)
+                fitpars[i] /= norm
+                i += 1
+        print fitpars
 
 
         #Set up the fitting logfile and logging arrays
@@ -398,11 +419,20 @@ class TelluricFitter:
 
         #Perform the fit
         self.first_iteration = True
-        errfcn = lambda pars: np.sum(self.FitErrorFunction(pars))
+        errfcn = lambda pars: np.sum(self.FitErrorFunction(pars)**2)
         bounds = [self.bounds[i] for i in range(len(self.parnames)) if self.fitting[i]]
         optdict = {"rhobeg": [1, 5, 1000.0]}
         optdict = {"eps": 5}
-        fitpars, success = leastsq(self.FitErrorFunction, fitpars, diag=1.0 / np.array(fitpars), epsfcn=0.001)
+        bfgs_optdict = {'disp': 2, 'pgtol': 1e-8, 'epsilon': 1, 'approx_grad': True}
+        slsqp_optdict = {'disp': 2, 'eps': 1e-1}
+        output = leastsq(self.FitErrorFunction, fitpars, full_output=True, xtol=1e-12, ftol=1e-12, epsfcn=1e-1)
+        #fitpars, success = leastsq(self.FitErrorFunction, fitpars, diag=1.0 / np.array(fitpars), epsfcn=0.001)
+        #output = minimize(errfcn, fitpars, method="SLSQP", options=slsqp_optdict, bounds=bounds)
+        #fitpars = output.x
+        #print "Message: ", output.message
+
+        fitpars = output[0]
+        print "Message: ", output[3]
 
         #Save the best-fit values
         idx = 0
@@ -432,7 +462,9 @@ class TelluricFitter:
         else:
             model = self.GenerateModel(fitpars)
         outfile = open("chisq_summary.dat", 'a')
-        weights = 1.0 / self.data.err ** 2
+        #weights = 1.0 / self.data.err
+        weights = np.ones(self.data.size())
+        weights /= weights.sum()
 
         #Find the regions to use (ignoring the parts that were defined as bad)
         good = np.arange(self.data.x.size, dtype=np.int32)
@@ -444,22 +476,21 @@ class TelluricFitter:
                 tmp2 = np.logical_or(self.data.x < x0, self.data.x > x1)
                 good = np.where(np.logical_and(tmp1, tmp2))[0]
 
-        return_array = (self.data.y - self.data.cont * model.y)[good] ** 2 * weights[good]
+        print "Fraction of points used in X^2 evaluation: ", float(good.size)/float(self.data.size())
+        return_array = (self.data.y - self.data.cont * model.y)[good] * weights[good]
         #Evaluate bound conditions and output the parameter value to the logfile.
         fit_idx = 0
         for i in range(len(self.bounds)):
             if self.fitting[i]:
-                if len(self.bounds[i]) == 2:
-                    return_array += FittingUtilities.bound(self.bounds[i], fitpars[fit_idx])
-                outfile.write("%.12g\t" % fitpars[fit_idx])
-                self.parvals[i].append(fitpars[fit_idx])
+                #if len(self.bounds[i]) == 2:
+                #    return_array += FittingUtilities.bound(self.bounds[i], fitpars[fit_idx])
+                outfile.write("%.12g\t" % self.const_pars[i])
+                self.parvals[i].append(self.const_pars[i])
                 fit_idx += 1
-            elif len(self.bounds[i]) == 2 and self.parnames[i] != "resolution":
-                return_array += FittingUtilities.bound(self.bounds[i], self.const_pars[i])
-        outfile.write("%g\n" % (np.sum(return_array) / float(weights.size)))
+        outfile.write("%g\n" % (np.sum(return_array**2) / float(weights.size)))
 
-        self.chisq_vals.append(np.sum(return_array) / float(weights.size))
-        print "X^2 = ", np.sum(return_array) / float(weights.size)
+        self.chisq_vals.append(np.sum(return_array**2) / float(weights.size))
+        print "X^2 = ", np.sum(return_array**2) / float(weights.size)
         outfile.close()
 
         return return_array
@@ -484,7 +515,13 @@ class TelluricFitter:
         fit_idx = 0
         for i in range(len(self.parnames)):
             if self.fitting[i]:
-                self.const_pars[i] = pars[fit_idx]
+                #Change from internal to bounded (physical) parameters
+                if self.bounds[i][1] < np.inf:
+                    self.const_pars[i] = self.bounds[i][0] + (np.sin(pars[fit_idx]*self.normalization[i]) + 1.0) * \
+                                                             (self.bounds[i][1] - self.bounds[i][0])/2.0
+                else:
+                    self.const_pars[i] = self.bounds[i][0] - 1.0 + \
+                                         np.sqrt((pars[fit_idx]*self.normalization[i])**2 + 1.0)
                 fit_idx += 1
         self.DisplayVariables(fitonly=True)
 
@@ -493,20 +530,8 @@ class TelluricFitter:
         fit_idx = 0
         for i in range(len(self.parnames)):
             #Assign to local variables by the parameter name
-            if self.fitting[i]:
-                exec ("%s = %g" % (self.parnames[i], pars[fit_idx]))
-                fit_idx += 1
-            else:
-                exec ("%s = %g" % (self.parnames[i], self.const_pars[i]))
+            exec ("%s = %g" % (self.parnames[i], self.const_pars[i]))
 
-            #Make sure everything is within its bounds
-            if len(self.bounds[i]) > 0:
-                lower = self.bounds[i][0]
-                upper = self.bounds[i][1]
-                exec (
-                "%s = %g if %s < %g else %s" % (self.parnames[i], lower, self.parnames[i], lower, self.parnames[i]))
-                exec (
-                "%s = %g if %s > %g else %s" % (self.parnames[i], upper, self.parnames[i], upper, self.parnames[i]))
 
         wavenum_start = 1e7 / waveend
         wavenum_end = 1e7 / wavestart
@@ -520,12 +545,12 @@ class TelluricFitter:
                                        resolution=None)
 
         #Shift the x-axis, using the shift from previous iterations
-        if self.debug:
-            print "Shifting by %.4g before fitting model" % self.shift
-        if self.adjust_wave == "data":
-            data.x += self.shift
-        elif self.adjust_wave == "model":
-            model.x -= self.shift
+        #if self.debug:
+        #    print "Shifting by %.4g before fitting model" % self.shift
+        #if self.adjust_wave == "data":
+        #    data.x += self.shift
+        #elif self.adjust_wave == "model":
+        #    model.x -= self.shift
 
         #Save each model if debugging
         if self.debug and self.debug_level >= 5:
@@ -627,7 +652,7 @@ class TelluricFitter:
         while not done:
             done = True
             if "SVD" in self.resolution_fit_mode and min(model.y) < 0.95:
-                model, self.broadstuff = self.Broaden(data.copy(), model_original.copy(), full_output=True)
+                model, self.broadstuff = self.Broaden2(data.copy(), model_original.copy(), full_output=True)
             elif "gauss" in self.resolution_fit_mode:
                 model, resolution = self.FitResolution(data.copy(), model_original.copy(), resolution)
             else:
@@ -1021,7 +1046,7 @@ class TelluricFitter:
                If the continuum is not very flat (i.e. from the spectrum of the actual
                  object you are trying to telluric correct), the broadening function
                  can become multiply-peaked and oscillatory. Use with care!
-      """
+        """
         n = data.x.size * oversampling
 
         #n must be even, and m must be odd!
@@ -1102,8 +1127,162 @@ class TelluricFitter:
             gaussian = np.exp(-(x - 5 * sigma) ** 2 / (2 * sigma ** 2))
             return FittingUtilities.RebinData(model, data.x), [gaussian / gaussian.sum(), xnew]
 
+
         elif np.mean(Broadening[maxindex - int(m / 10.0):maxindex + int(m / 10.0)]) < 3 * np.mean(
                 Broadening[int(m / 5.0):]):
+            outfilename = "SVD_Error2.log"
+            np.savetxt(outfilename, np.transpose((Broadening, )))
+            print "Warning! SVD Broadening function is not strongly peaked! See SVD_Error2.log for the broadening function"
+
+            idx = self.parnames.index("resolution")
+            resolution = self.const_pars[idx]
+            model = FittingUtilities.ReduceResolution(model, resolution)
+
+            #Make broadening function from the gaussian
+            centralwavelength = (data.x[0] + data.x[-1]) / 2.0
+            FWHM = centralwavelength / resolution;
+            sigma = FWHM / (2.0 * np.sqrt(2.0 * np.log(2.0)))
+            left = 0
+            right = np.searchsorted(xnew, 10 * sigma)
+            x = np.arange(0, 10 * sigma, xnew[1] - xnew[0])
+            gaussian = np.exp(-(x - 5 * sigma) ** 2 / (2 * sigma ** 2))
+            return FittingUtilities.RebinData(model, data.x), [gaussian / gaussian.sum(), xnew]
+
+
+        #If we get here, the broadening function looks okay.
+        #Convolve the model with the broadening function
+        model = DataStructures.xypoint(x=xnew)
+        Broadened = UnivariateSpline(xnew, np.convolve(model_new, Broadening, mode="same"), s=0)
+        model.y = Broadened(model.x)
+
+        #Fit the broadening function to a gaussian
+        params = [0.0, -Broadening[maxindex], maxindex, 10.0]
+        params, success = leastsq(self.GaussianErrorFunction, params, args=(np.arange(Broadening.size), Broadening))
+        sigma = params[3] * (xnew[1] - xnew[0])
+        FWHM = sigma * 2.0 * np.sqrt(2.0 * np.log(2.0))
+        resolution = np.median(data.x) / FWHM
+        #idx = self.parnames.index("resolution")
+        #self.const_pars[idx] = resolution
+
+        print "Approximate resolution = %g" % resolution
+
+        #x2 = np.arange(Broadening.size)
+
+        if full_output:
+            return FittingUtilities.RebinData(model, data.x), [Broadening, xnew]
+        else:
+            return FittingUtilities.RebinData(model, data.x)
+
+
+    def Broaden2(self, data, model, oversampling=5, m=101, dimension=20, full_output=False):
+        """
+        Fits the broadening profile using singular value decomposition. This function is
+        called by GenerateModel, and is not meant to be called directly!
+
+        -oversampling is the oversampling factor to use before doing the SVD
+        -m is the size of the broadening function, in oversampled units
+        -dimension is the number of eigenvalues to keep in the broadening function. (Keeping too many starts fitting noise)
+
+        -NOTE: This function works well when there are strong telluric lines and a flat continuum.
+               If there are weak telluric lines, it's hard to not fit noise.
+               If the continuum is not very flat (i.e. from the spectrum of the actual
+                 object you are trying to telluric correct), the broadening function
+                 can become multiply-peaked and oscillatory. Use with care!
+        """
+        n = data.x.size * oversampling
+
+        #n must be even, and m must be odd!
+        if n % 2 != 0:
+            n += 1
+        if m % 2 == 0:
+            m += 1
+
+        #resample data
+        Spectrum = UnivariateSpline(data.x, data.y / data.cont, s=0)
+        Model = UnivariateSpline(model.x, model.y, s=0)
+        xnew = np.linspace(data.x[0], data.x[-1], n)
+        ynew = Spectrum(xnew)
+        model_new = FittingUtilities.RebinData(model, xnew).y
+
+        #Make 'design matrix'
+        design = np.zeros((n - m, m))
+        for j in range(m):
+            for i in range(m / 2, n - m / 2 - 1):
+                design[i - m / 2, j] = model_new[i - j + m / 2]
+        design = mat(design)
+
+        #Do Singular Value Decomposition
+        try:
+            U, W, V_t = svd(design, full_matrices=False)
+        except np.linalg.linalg.LinAlgError:
+            outfilename = "SVD_Error.log"
+            outfile = open(outfilename, "a")
+            np.savetxt(outfile, np.transpose((data.x, data.y, data.cont)))
+            outfile.write("\n\n\n\n\n")
+            np.savetxt(outfile, np.transpose((model.x, model.y, model.cont)))
+            outfile.write("\n\n\n\n\n")
+            outfile.close()
+            sys.exit("SVD did not converge! Outputting data to %s" % outfilename)
+
+        #Invert matrices:
+        #   U, V are orthonormal, so inversion is just their transposes
+        #   W is a diagonal matrix, so its inverse is 1/W
+        W1 = 1.0 / W
+        U_t = np.transpose(U)
+        V = np.transpose(V_t)
+
+        #Remove the smaller values of W
+        W1[dimension:] = 0
+        W2 = diagsvd(W1, m, m)
+
+        #Solve for the broadening function
+        spec = np.transpose(mat(ynew[m / 2:n - m / 2 - 1]))
+        temp = np.dot(U_t, spec)
+        temp = np.dot(W2, temp)
+        Broadening = np.dot(V, temp)
+
+        #Make Broadening function a 1d array
+        spacing = xnew[2] - xnew[1]
+        xnew = np.arange(model.x[0], model.x[-1], spacing)
+        model_new = Model(xnew)
+        Broadening = np.array(Broadening)[..., 0]
+
+        #Find the peak
+        #maxindex = np.argmax(Broadening)
+        maxindex = m // 2
+
+        #Find the first zero-crossings on either size of maxindex
+        left = maxindex - self.FindZeroCrossing(Broadening[:maxindex+1][::-1])
+        right = maxindex + self.FindZeroCrossing(Broadening[maxindex:])
+        Broadening[:left] = 0.0
+        Broadening[right:] = 0.0
+        Broadening /= Broadening.sum()
+
+
+        #Ensure that the broadening function is appropriate:
+        maxindex = Broadening.argmax()
+        if maxindex > m / 2.0 + m / 10.0 or maxindex < m / 2.0 - m / 10.0:
+            #The maximum should be in the middle because we already did wavelength calibration!
+            outfilename = "SVD_Error2.log"
+            np.savetxt(outfilename, np.transpose((Broadening, )))
+            print "Warning! SVD Broadening function peaked at the wrong location! See SVD_Error2.log for the broadening function"
+
+            idx = self.parnames.index("resolution")
+            resolution = self.const_pars[idx]
+            model = FittingUtilities.ReduceResolution(model, resolution)
+
+            #Make broadening function from the gaussian
+            centralwavelength = (data.x[0] + data.x[-1]) / 2.0
+            FWHM = centralwavelength / resolution;
+            sigma = FWHM / (2.0 * np.sqrt(2.0 * np.log(2.0)))
+            left = 0
+            right = np.searchsorted(xnew, 10 * sigma)
+            x = np.arange(0, 10 * sigma, xnew[1] - xnew[0])
+            gaussian = np.exp(-(x - 5 * sigma) ** 2 / (2 * sigma ** 2))
+            return FittingUtilities.RebinData(model, data.x), [gaussian / gaussian.sum(), xnew]
+
+        elif np.mean(Broadening[maxindex - int(m / 10.0):maxindex + int(m / 10.0)]) < 3 * np.mean(
+                Broadening[maxindex + (m / 2.0):]):
             outfilename = "SVD_Error2.log"
             np.savetxt(outfilename, np.transpose((Broadening, )))
             print "Warning! SVD Broadening function is not strongly peaked! See SVD_Error2.log for the broadening function"
@@ -1146,3 +1325,13 @@ class TelluricFitter:
         else:
             return FittingUtilities.RebinData(model, data.x)
 
+
+    def FindZeroCrossing(self, l):
+        """
+        Finds the first zero-crossing of the array-like structure l
+
+        :param l:
+        :return: index of the zero crossing
+        """
+        signdiffs = np.sign(l[:-1]) * np.sign(l[1:])
+        return np.where(signdiffs < 0.5)[0][0] + 1
