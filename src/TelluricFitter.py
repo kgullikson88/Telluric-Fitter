@@ -52,7 +52,7 @@ from functools import partial
 import FittingUtilities
 
 from scipy.interpolate import UnivariateSpline
-from scipy.optimize import leastsq, fminbound, minimize
+from scipy.optimize import leastsq, fminbound
 from scipy.linalg import svd, diagsvd
 from scipy import mat
 import matplotlib.pyplot as plt
@@ -425,7 +425,7 @@ class TelluricFitter:
         optdict = {"eps": 5}
         bfgs_optdict = {'disp': 2, 'pgtol': 1e-8, 'epsilon': 1, 'approx_grad': True}
         slsqp_optdict = {'disp': 2, 'eps': 1e-1}
-        output = leastsq(self.FitErrorFunction, fitpars, full_output=True, xtol=1e-12, ftol=1e-12, epsfcn=1e-1)
+        output = leastsq(self.FitErrorFunction, fitpars, full_output=True, epsfcn=1e-1)
         #fitpars, success = leastsq(self.FitErrorFunction, fitpars, diag=1.0 / np.array(fitpars), epsfcn=0.001)
         #output = minimize(errfcn, fitpars, method="SLSQP", options=slsqp_optdict, bounds=bounds)
         #fitpars = output.x
