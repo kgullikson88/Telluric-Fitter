@@ -1106,36 +1106,27 @@ class TelluricFitter:
 
         #Ensure that the broadening function is appropriate:
         maxindex = Broadening.argmax()
+        badfit = False
         if maxindex > m / 2.0 + m / 10.0 or maxindex < m / 2.0 - m / 10.0:
             #The maximum should be in the middle because we already did wavelength calibration!
             outfilename = "SVD_Error2.log"
             np.savetxt(outfilename, np.transpose((Broadening, )))
-            print "Warning! SVD Broadening function peaked at the wrong location! See SVD_Error2.log for the broadening function"
-
-            idx = self.parnames.index("resolution")
-            resolution = self.const_pars[idx]
-            model = FittingUtilities.ReduceResolution(model, resolution)
-
-            #Make broadening function from the gaussian
-            centralwavelength = (data.x[0] + data.x[-1]) / 2.0
-            FWHM = centralwavelength / resolution;
-            sigma = FWHM / (2.0 * np.sqrt(2.0 * np.log(2.0)))
-            left = 0
-            right = np.searchsorted(xnew, 10 * sigma)
-            x = np.arange(0, 10 * sigma, xnew[1] - xnew[0])
-            gaussian = np.exp(-(x - 5 * sigma) ** 2 / (2 * sigma ** 2))
-            return FittingUtilities.RebinData(model, data.x), [gaussian / gaussian.sum(), xnew]
+            warnings.warn("Warning! SVD Broadening function peaked at the wrong location! "
+                          "See SVD_Error2.log for the broadening function")
+            badfit = True
 
 
         elif np.mean(Broadening[maxindex - int(m / 10.0):maxindex + int(m / 10.0)]) < 3 * np.mean(
                 Broadening[int(m / 5.0):]):
             outfilename = "SVD_Error2.log"
             np.savetxt(outfilename, np.transpose((Broadening, )))
-            print "Warning! SVD Broadening function is not strongly peaked! See SVD_Error2.log for the broadening function"
+            warnings.warn("Warning! SVD Broadening function is not strongly peaked! "
+                          "See SVD_Error2.log for the broadening function")
+            badfit = True
 
-            idx = self.parnames.index("resolution")
-            resolution = self.const_pars[idx]
-            model = FittingUtilities.ReduceResolution(model, resolution)
+        if badfit:
+            resolution = self.GetValue('resolution')
+            model, resolution = self.FitResolution(data, model, resolution)
 
             #Make broadening function from the gaussian
             centralwavelength = (data.x[0] + data.x[-1]) / 2.0
@@ -1145,7 +1136,8 @@ class TelluricFitter:
             right = np.searchsorted(xnew, 10 * sigma)
             x = np.arange(0, 10 * sigma, xnew[1] - xnew[0])
             gaussian = np.exp(-(x - 5 * sigma) ** 2 / (2 * sigma ** 2))
-            return FittingUtilities.RebinData(model, data.x), [gaussian / gaussian.sum(), xnew]
+            return model, [gaussian / gaussian.sum(), xnew]
+
 
 
         #If we get here, the broadening function looks okay.
@@ -1260,35 +1252,27 @@ class TelluricFitter:
 
         #Ensure that the broadening function is appropriate:
         maxindex = Broadening.argmax()
+        badfit = False
         if maxindex > m / 2.0 + m / 10.0 or maxindex < m / 2.0 - m / 10.0:
             #The maximum should be in the middle because we already did wavelength calibration!
             outfilename = "SVD_Error2.log"
             np.savetxt(outfilename, np.transpose((Broadening, )))
-            print "Warning! SVD Broadening function peaked at the wrong location! See SVD_Error2.log for the broadening function"
+            warnings.warn("Warning! SVD Broadening function peaked at the wrong location! "
+                          "See SVD_Error2.log for the broadening function")
+            badfit = True
 
-            idx = self.parnames.index("resolution")
-            resolution = self.const_pars[idx]
-            model = FittingUtilities.ReduceResolution(model, resolution)
-
-            #Make broadening function from the gaussian
-            centralwavelength = (data.x[0] + data.x[-1]) / 2.0
-            FWHM = centralwavelength / resolution;
-            sigma = FWHM / (2.0 * np.sqrt(2.0 * np.log(2.0)))
-            left = 0
-            right = np.searchsorted(xnew, 10 * sigma)
-            x = np.arange(0, 10 * sigma, xnew[1] - xnew[0])
-            gaussian = np.exp(-(x - 5 * sigma) ** 2 / (2 * sigma ** 2))
-            return FittingUtilities.RebinData(model, data.x), [gaussian / gaussian.sum(), xnew]
 
         elif np.mean(Broadening[maxindex - int(m / 10.0):maxindex + int(m / 10.0)]) < 3 * np.mean(
-                Broadening[maxindex + (m / 2.0):]):
+                Broadening[int(m / 5.0):]):
             outfilename = "SVD_Error2.log"
             np.savetxt(outfilename, np.transpose((Broadening, )))
-            print "Warning! SVD Broadening function is not strongly peaked! See SVD_Error2.log for the broadening function"
+            warnings.warn("Warning! SVD Broadening function is not strongly peaked! "
+                          "See SVD_Error2.log for the broadening function")
+            badfit = True
 
-            idx = self.parnames.index("resolution")
-            resolution = self.const_pars[idx]
-            model = FittingUtilities.ReduceResolution(model, resolution)
+        if badfit:
+            resolution = self.GetValue('resolution')
+            model, resolution = self.FitResolution(data, model, resolution)
 
             #Make broadening function from the gaussian
             centralwavelength = (data.x[0] + data.x[-1]) / 2.0
@@ -1298,7 +1282,8 @@ class TelluricFitter:
             right = np.searchsorted(xnew, 10 * sigma)
             x = np.arange(0, 10 * sigma, xnew[1] - xnew[0])
             gaussian = np.exp(-(x - 5 * sigma) ** 2 / (2 * sigma ** 2))
-            return FittingUtilities.RebinData(model, data.x), [gaussian / gaussian.sum(), xnew]
+            return model, [gaussian / gaussian.sum(), xnew]
+
 
         #If we get here, the broadening function looks okay.
         #Convolve the model with the broadening function
