@@ -58,6 +58,7 @@ from scipy.linalg import svd, diagsvd
 from scipy import mat
 import matplotlib.pyplot as plt
 import numpy as np
+from numpy.polynomial import chebyshev
 
 import MakeModel
 import DataStructures
@@ -744,7 +745,8 @@ class TelluricFitter:
     ### -----------------------------------------------
 
 
-    def FitWavelength(self, data_original, telluric, tol=0.05, oversampling=4, fitorder=3, numiters=10):
+    def FitWavelength(self, data_original, telluric, tol=0.05, linestrength=0.98, oversampling=4, fitorder=3,
+                      numiters=10):
         """
         Function to fine-tune the wavelength solution of a generated model
           It does so by looking for telluric lines in both the
@@ -754,11 +756,12 @@ class TelluricFitter:
           be very close for this algorithm to succeed! NOT MEANT TO BE CALLED
           DIRECTLY BY THE USER!
         """
-        print "Fitting Wavelength"
+        if self.debug:
+            print "Fitting Wavelength"
         old = []
         new = []
         #Find lines in the telluric model
-        linelist = FittingUtilities.FindLines(telluric, debug=self.debug, tol=0.98)
+        linelist = FittingUtilities.FindLines(telluric, debug=self.debug, tol=linestrength)
         if len(linelist) < fitorder:
             fit = lambda x: x
             mean = 0.0
@@ -897,10 +900,8 @@ class TelluricFitter:
         x is assumed to be a np.ndarray!
          Not meant to be called directly by the user!
         """
-        retval = np.zeros(x.size)
-        for i in range(len(pars)):
-            retval += pars[i] * x ** i
-        return retval
+        xgrid = (x - np.median(x)) / (max(x) - min(x))
+        return chebyshev.chebval(x, pars)
 
 
     ### -----------------------------------------------
@@ -911,9 +912,14 @@ class TelluricFitter:
         Cost function for the new wavelength fitter.
         Not meant to be called directly by the user!
         """
+        # xgrid = (data.x - np.median(data.x))/(data.x[-1] - data.x[0])
+        #dx = chebyshev.chebval(xgrid, pars)
         dx = self.Poly(pars, data.x)
         penalty = np.sum(np.abs(dx[np.abs(dx) > maxdiff]))
-        return (data.y / data.cont / model(data.x + dx)) ** 2 + penalty
+        retval = (data.y / data.cont / model(data.x + dx) - 1.0) + penalty
+        retval = (data.y / data.cont - model(data.x + dx)) + penalty
+        print max(abs(dx)), np.sum(retval ** 2) / float(data.size())
+        return retval
 
 
     ### -----------------------------------------------
@@ -938,10 +944,13 @@ class TelluricFitter:
             args = (data_original, modelfcn, 0.05)
         else:
             args = (data_original, modelfcn, 100)
-        output = leastsq(self.WavelengthErrorFunctionNew, pars, args=args, full_output=True)
+        output = leastsq(self.WavelengthErrorFunctionNew, pars, args=args, full_output=True, xtol=1e-12, ftol=1e-12)
         pars = output[0]
+        print pars
 
         return partial(self.Poly, pars), 0.0
+        # fcn = lambda pars, x: chebyshev.chebval(x, pars)
+        #return partial(fcn, pars), 0.0
 
         #return pars
         #return lambda x: self.Poly(pars, x), 0
