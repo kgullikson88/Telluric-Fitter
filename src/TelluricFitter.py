@@ -918,7 +918,6 @@ class TelluricFitter:
         penalty = np.sum(np.abs(dx[np.abs(dx) > maxdiff]))
         retval = (data.y / data.cont / model(data.x + dx) - 1.0) + penalty
         retval = (data.y / data.cont - model(data.x + dx)) + penalty
-        print max(abs(dx)), np.sum(retval ** 2) / float(data.size())
         return retval
 
 
