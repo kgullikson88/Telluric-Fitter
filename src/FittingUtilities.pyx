@@ -21,10 +21,12 @@ import numpy as np
 from scipy.interpolate import InterpolatedUnivariateSpline as spline
 from scipy.interpolate import UnivariateSpline as smoother
 from scipy.signal import argrelmin, fftconvolve
-import DataStructures
 import matplotlib.pyplot as plt
 from pysynphot.observation import Observation
 from pysynphot.spectrum import ArraySourceSpectrum, ArraySpectralElement
+
+import DataStructures
+
 cimport numpy as np
 cimport cython
 from libc.math cimport exp, log, sqrt
@@ -249,20 +251,20 @@ def FindLines(spectrum, tol=0.99, linespacing = 0.01, debug=False):
   #First, convert the inputs into inputs for scipy's argrelmin
   xspacing = float(max(spectrum.x) - min(spectrum.x))/float(spectrum.size())
   N = int( linespacing / xspacing + 0.5)
-  lines = list(argrelmin(spectrum.y, order=N)[0])
+  lines = list(argrelmin(spectrum.y / spectrum.cont, order=N)[0])
 
   #Check for lines that are too weak.
   for i in range(len(lines)-1, -1, -1):
     idx = lines[i]
     xval = spectrum.x[idx]
-    yval = spectrum.y[idx]
+    yval = spectrum.y[idx] / spectrum.cont[idx]
     if yval > tol:
       lines.pop(i)
     elif debug:
       plt.plot([xval, xval], [yval-0.01, yval-0.03], 'r-')
       
   if debug:
-    plt.plot(spectrum.x, spectrum.y, 'k-')
+      plt.plot(spectrum.x, spectrum.y / spectrum.cont, 'k-')
     plt.title("Lines found in FittingUtilities.FindLines")
     plt.xlabel("Wavelength (nm)")
     plt.ylabel("Flux")

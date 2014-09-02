@@ -893,15 +893,15 @@ class TelluricFitter:
 
 
 
-    def Poly(self, pars, x):
+    def Poly(self, pars, middle, low, high, x):
         """
         Generates a polynomial with the given parameters
         for all of the x-values.
         x is assumed to be a np.ndarray!
          Not meant to be called directly by the user!
         """
-        xgrid = (x - np.median(x)) / (max(x) - min(x))
-        return chebyshev.chebval(x, pars)
+        xgrid = (x - middle) / (high - low)  # re-scale
+        return chebyshev.chebval(xgrid, pars)
 
 
     ### -----------------------------------------------
@@ -914,7 +914,7 @@ class TelluricFitter:
         """
         # xgrid = (data.x - np.median(data.x))/(data.x[-1] - data.x[0])
         #dx = chebyshev.chebval(xgrid, pars)
-        dx = self.Poly(pars, data.x)
+        dx = self.Poly(pars, np.median(data.x), min(data.x), max(data.x), data.x)
         penalty = np.sum(np.abs(dx[np.abs(dx) > maxdiff]))
         retval = (data.y / data.cont / model(data.x + dx) - 1.0) + penalty
         retval = (data.y / data.cont - model(data.x + dx)) + penalty
@@ -947,7 +947,7 @@ class TelluricFitter:
         pars = output[0]
         print pars
 
-        return partial(self.Poly, pars), 0.0
+        return partial(self.Poly, pars, np.median(data_original.x), min(data_original.x), max(data_original.x)), 0.0
         # fcn = lambda pars, x: chebyshev.chebval(x, pars)
         #return partial(fcn, pars), 0.0
 
