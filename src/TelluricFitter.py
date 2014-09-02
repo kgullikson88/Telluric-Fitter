@@ -1135,16 +1135,18 @@ class TelluricFitter:
         if badfit:
             resolution = self.GetValue('resolution')
             model, resolution = self.FitResolution(data, model, resolution)
-
-            #Make broadening function from the gaussian
-            centralwavelength = (data.x[0] + data.x[-1]) / 2.0
-            FWHM = centralwavelength / resolution;
-            sigma = FWHM / (2.0 * np.sqrt(2.0 * np.log(2.0)))
-            left = 0
-            right = np.searchsorted(xnew, 10 * sigma)
-            x = np.arange(0, 10 * sigma, xnew[1] - xnew[0])
-            gaussian = np.exp(-(x - 5 * sigma) ** 2 / (2 * sigma ** 2))
-            return model, [gaussian / gaussian.sum(), xnew]
+            if full_output:
+                # Make broadening function from the gaussian
+                centralwavelength = (data.x[0] + data.x[-1]) / 2.0
+                FWHM = centralwavelength / resolution;
+                sigma = FWHM / (2.0 * np.sqrt(2.0 * np.log(2.0)))
+                left = 0
+                right = np.searchsorted(xnew, 10 * sigma)
+                x = np.arange(0, 10 * sigma, xnew[1] - xnew[0])
+                gaussian = np.exp(-(x - 5 * sigma) ** 2 / (2 * sigma ** 2))
+                return model, [gaussian / gaussian.sum(), xnew]
+            else:
+                return model
 
 
 
@@ -1251,7 +1253,7 @@ class TelluricFitter:
         maxindex = m // 2
 
         #Find the first zero-crossings on either size of maxindex
-        left = maxindex - self.FindZeroCrossing(Broadening[:maxindex+1][::-1])
+        left = maxindex - self.FindZeroCrossing(Broadening[:maxindex + 1][::-1]) + 1
         right = maxindex + self.FindZeroCrossing(Broadening[maxindex:])
         Broadening[:left] = 0.0
         Broadening[right:] = 0.0
@@ -1282,15 +1284,18 @@ class TelluricFitter:
             resolution = self.GetValue('resolution')
             model, resolution = self.FitResolution(data, model, resolution)
 
-            #Make broadening function from the gaussian
-            centralwavelength = (data.x[0] + data.x[-1]) / 2.0
-            FWHM = centralwavelength / resolution;
-            sigma = FWHM / (2.0 * np.sqrt(2.0 * np.log(2.0)))
-            left = 0
-            right = np.searchsorted(xnew, 10 * sigma)
-            x = np.arange(0, 10 * sigma, xnew[1] - xnew[0])
-            gaussian = np.exp(-(x - 5 * sigma) ** 2 / (2 * sigma ** 2))
-            return model, [gaussian / gaussian.sum(), xnew]
+            if full_output:
+                # Make broadening function from the gaussian
+                centralwavelength = (data.x[0] + data.x[-1]) / 2.0
+                FWHM = centralwavelength / resolution;
+                sigma = FWHM / (2.0 * np.sqrt(2.0 * np.log(2.0)))
+                left = 0
+                right = np.searchsorted(xnew, 10 * sigma)
+                x = np.arange(0, 10 * sigma, xnew[1] - xnew[0])
+                gaussian = np.exp(-(x - 5 * sigma) ** 2 / (2 * sigma ** 2))
+                return model, [gaussian / gaussian.sum(), xnew]
+            else:
+                return model
 
 
         #If we get here, the broadening function looks okay.
