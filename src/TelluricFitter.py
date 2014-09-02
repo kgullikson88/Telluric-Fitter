@@ -1008,13 +1008,13 @@ class TelluricFitter:
         newmodel = FittingUtilities.RebinData(newmodel, data.x, synphot=False)
 
         #Find the regions to use (ignoring the parts that were defined as bad)
-        good = np.arange(self.data.x.size, dtype=np.int32)
+        good = np.arange(data.x.size, dtype=np.int32)
         if len(self.ignore) > 0 and all([len(region) > 0 for region in self.ignore]):
             for region in self.ignore:
                 x0 = min(region)
                 x1 = max(region)
-                tmp1 = [self.data.x[i] in self.data.x[good] for i in range(self.data.x.size)]
-                tmp2 = np.logical_or(self.data.x < x0, self.data.x > x1)
+                tmp1 = [data.x[i] in data.x[good] for i in range(data.x.size)]
+                tmp2 = np.logical_or(data.x < x0, data.x > x1)
                 good = np.where(np.logical_and(tmp1, tmp2))[0]
 
         weights = 1.0 / data.err ** 2
