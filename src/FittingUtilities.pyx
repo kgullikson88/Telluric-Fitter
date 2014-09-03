@@ -27,6 +27,7 @@ from pysynphot.spectrum import ArraySourceSpectrum, ArraySpectralElement
 
 import DataStructures
 
+
 cimport numpy as np
 cimport cython
 from libc.math cimport exp, log, sqrt
@@ -265,10 +266,10 @@ def FindLines(spectrum, tol=0.99, linespacing = 0.01, debug=False):
       
   if debug:
       plt.plot(spectrum.x, spectrum.y / spectrum.cont, 'k-')
-    plt.title("Lines found in FittingUtilities.FindLines")
-    plt.xlabel("Wavelength (nm)")
-    plt.ylabel("Flux")
-    plt.show()
+      plt.title("Lines found in FittingUtilities.FindLines")
+      plt.xlabel("Wavelength (nm)")
+      plt.ylabel("Flux")
+      plt.show()
   return np.array(lines)
 
 
@@ -298,12 +299,14 @@ def RebinData(data, xgrid, synphot=True):
     newdata.err = rebin_spec(data.x, data.err, xgrid) #Unlikely to be correct!
     
     #pysynphot has edge effect issues on the first and last index.
-    newdata.y[0] = data.y[0]
-    newdata.y[-1] = data.y[-1]
-    newdata.cont[0] = data.cont[0]
-    newdata.cont[-1] = data.cont[-1]
-    newdata.err[0] = data.err[0]
-    newdata.err[-1] = data.err[-1]
+    firstindex = np.argmin(np.abs(data.x - xgrid[0]))
+    lastindex = np.argmin(np.abs(data.x - xgrid[-1]))
+    newdata.y[0] = data.y[firstindex]
+    newdata.y[-1] = data.y[lastindex]
+    newdata.cont[0] = data.cont[firstindex]
+    newdata.cont[-1] = data.cont[lastindex]
+    newdata.err[0] = data.err[firstindex]
+    newdata.err[-1] = data.err[lastindex]
 
     #Re-apply units
     newdata.x *= xunits
