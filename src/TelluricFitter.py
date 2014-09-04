@@ -51,14 +51,14 @@ import os
 from functools import partial
 import FittingUtilities
 import warnings
+import numpy as np
+from numpy.polynomial import chebyshev
 
 from scipy.interpolate import UnivariateSpline
 from scipy.optimize import leastsq, fminbound
 from scipy.linalg import svd, diagsvd
 from scipy import mat
 import matplotlib.pyplot as plt
-import numpy as np
-from numpy.polynomial import chebyshev
 
 import MakeModel
 import DataStructures
@@ -651,9 +651,9 @@ class TelluricFitter:
         done = False
         while not done:
             done = True
-            if "SVD" in self.resolution_fit_mode and min(model.y) < 0.95:
+            if "svd" in self.resolution_fit_mode.lower() and min(model.y) < 0.95:
                 model, self.broadstuff = self.Broaden2(data.copy(), model_original.copy(), full_output=True)
-            elif "gauss" in self.resolution_fit_mode:
+            elif "gauss" in self.resolution_fit_mode.lower():
                 model, resolution = self.FitResolution(data.copy(), model_original.copy(), resolution)
             else:
                 done = False
@@ -945,7 +945,6 @@ class TelluricFitter:
             args = (data_original, modelfcn, 100)
         output = leastsq(self.WavelengthErrorFunctionNew, pars, args=args, full_output=True, xtol=1e-12, ftol=1e-12)
         pars = output[0]
-        print pars
 
         return partial(self.Poly, pars, np.median(data_original.x), min(data_original.x), max(data_original.x)), 0.0
         # fcn = lambda pars, x: chebyshev.chebval(x, pars)
