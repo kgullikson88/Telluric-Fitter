@@ -108,7 +108,7 @@ def Continuum(x, y, fitorder=3, lowreject=2, highreject=4, numiter=10000, functi
   y2 = np.copy(y)
   iteration = 0
   while not done and iteration < numiter:
-    numiter += 1
+    iteration += 1
     done = True
     if function == "poly":
       fit = np.poly1d(np.polyfit(x2 - x2.mean(), y2, fitorder))
