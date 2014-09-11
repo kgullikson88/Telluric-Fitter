@@ -1271,8 +1271,7 @@ class TelluricFitter:
             badfit = True
 
 
-        elif np.mean(Broadening[maxindex - int(m / 10.0):maxindex + int(m / 10.0)]) < 3 * np.mean(
-                Broadening[int(m / 5.0):]):
+        elif Broadening[maxindex] < 3 * np.mean(Broadening[maxindex + int(m / 5.0):]):
             outfilename = "SVD_Error2.log"
             np.savetxt(outfilename, np.transpose((Broadening, )))
             warnings.warn("Warning! SVD Broadening function is not strongly peaked! "
