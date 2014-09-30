@@ -255,7 +255,7 @@ requires = ['matplotlib',
             'fortranformat']
 
 setup(name='TelFit',
-      version='1.0',
+      version='1.1',
       author='Kevin Gullikson',
       author_email='kgulliks@astro.as.utexas.edu',
       url="http://www.as.utexas.edu/~kgulliks/projects.html",
