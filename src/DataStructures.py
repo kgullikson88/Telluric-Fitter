@@ -96,7 +96,7 @@ class xypoint:
             cont = np.array([self.cont[i] for i in range(start, stop, step)])
             err = np.array([self.err[i] for i in range(start, stop, step)])
             return xypoint(x=x, y=y, cont=cont, err=err)
-        elif isinstance(index, list):
+        elif isinstance(index, list) or isinstance(index, tuple) or isinstance(index, np.ndarray):
             x = self.x[index]
             y = self.y[index]
             cont = self.cont[index]
