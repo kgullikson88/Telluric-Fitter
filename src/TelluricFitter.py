@@ -51,9 +51,9 @@ import os
 from functools import partial
 import FittingUtilities
 import warnings
+
 import numpy as np
 from numpy.polynomial import chebyshev
-
 from scipy.interpolate import UnivariateSpline
 from scipy.optimize import leastsq, fminbound
 from scipy.linalg import svd, diagsvd
@@ -1329,7 +1329,7 @@ class TelluricFitter:
         :return: index of the zero crossing
         """
         signdiffs = np.sign(l[:-1]) * np.sign(l[1:])
-        if min(signdiffs) > 0.5:
+        if min(signdiffs) >= 0.5:
             # The broadening function never hits zero!
             return len(l)
         return np.where(signdiffs < 0.5)[0][0] + 1
