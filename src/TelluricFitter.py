@@ -1241,6 +1241,12 @@ class TelluricFitter:
         temp = np.dot(W2, temp)
         Broadening = np.dot(V, temp)
 
+        if any( np.isnan(Broadening) ):
+            data.output("Broaden2_Data.dat")
+            model.output("Broaden2_Model.dat")
+            np.savetxt("Broaden2_DesignMat.dat", design)
+            sys.exit("NaN found in Broadening kernel!")
+
         #Make Broadening function a 1d array
         spacing = xnew[2] - xnew[1]
         xnew = np.arange(model.x[0], model.x[-1], spacing)
