@@ -1,7 +1,7 @@
 TelFit Code
 ===========
 
-This code will fit the telluric absorption spectrum in data, using LBLRTM. More details can be found in the manual and examples, but the installation and run procedure are outlined below. If you use this code, please cite me using the DOI at http://dx.doi.org/10.5281/zenodo.9994 
+This code will fit the telluric absorption spectrum in data, using LBLRTM. More details can be found in the manual and examples, but the installation and run procedure are outlined below. If you use this code, please cite [my paper](http://adsabs.harvard.edu/abs/2014AJ....148...53G)
 
 
 Installation
