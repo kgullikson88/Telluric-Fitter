@@ -430,7 +430,7 @@ def ReduceResolution(data,resolution, extend=True):
 """
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef np.ndarray[DTYPE_t, ndim=1] convolve(np.ndarray[DTYPE_t, ndim=1] x, 
+cdef np.ndarray[DTYPE_t, ndim=1] convolve(np.ndarray[DTYPE_t, ndim=1] x,
                                              np.ndarray[DTYPE_t, ndim=1] y,
                                              np.ndarray[DTYPE_t, ndim=1] output,
                                              
@@ -462,7 +462,7 @@ cdef np.ndarray[DTYPE_t, ndim=1] convolve(np.ndarray[DTYPE_t, ndim=1] x,
       conv += g*y[n+i]
     output[n] = conv/total
   return output
-  
+
   
 
 
@@ -505,7 +505,51 @@ def ReduceResolution2(data,resolution, extend=True, nsig=5):
   
     
   
-  
+def ReduceResolutionFFT(data, resolution, extend=True, loglinear=True, nsig=5):
+    """
+    Uses an fft to quickly reduce the resolution of a spectrum to the desired value
+    :param data: An xypoint structure with the data to be convolved
+    :param resolution: The value of the resolution dlam/lam
+    :keyword extend: Flag to decide whether to extend the array before convolving to reduce edge effects
+    :keyword loglinear: If true, the spectrum is already in log-linear spacing. If not, we have to do it here...
+    :keyword nsig: The number of sigma to go on either side of the peak.
+    """
+    if not loglinear:
+        x0 = np.log10(data.x[0])
+        x1 = np.log10(data.x[-1])
+        xgrid = np.logspace(x0, x1, data.size())
+        data = RebinData(data, xgrid)
+
+    # Make the broadening kernel. Don't know where the NECESSARY factor of log(200) comes from...
+    sigma = 1.0 / (2.0*resolution*np.sqrt(2*np.log(2.0)))
+    dx = np.log10(data.x[100]/data.x[99]) * np.log10(200.0)
+    d_logx = np.arange(0.0, nsig*sigma, dx)
+    d_logx = np.r_[-d_logx[::-1][:-1], d_logx]
+    B = np.exp(-0.5*(d_logx/sigma)**2)
+    B /= B.sum()  #Normalize
+
+    # Extend the data, if requested
+    if extend:
+        n = nsig*sigma/dx
+        before = data.y[-n:]
+        after = data.y[:n]
+        y = np.r_[before, data.y, after]
+    else:
+        y = data.y
+
+    # Do the convolution
+    conv = fftconvolve(rebinned.y, B, mode='same')
+
+    # Shorten the final array if we extended it
+    if extend:
+        conv = conv[before.size():-after.size()]
+
+    newdata = data.copy()
+    newdata.y = conv
+    return newdata
+
+
+
   
 
   
