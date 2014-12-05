@@ -530,7 +530,7 @@ def ReduceResolutionFFT(data, resolution, extend=True, loglinear=True, nsig=5):
 
     # Extend the data, if requested
     if extend:
-        n = nsig*sigma/dx
+        n = int(nsig*sigma/dx + 1)
         before = data.y[-n:]
         after = data.y[:n]
         y = np.r_[before, data.y, after]
