@@ -538,7 +538,7 @@ def ReduceResolutionFFT(data, resolution, extend=True, loglinear=True, nsig=5):
         y = data.y
 
     # Do the convolution
-    conv = fftconvolve(rebinned.y, B, mode='same')
+    conv = fftconvolve(y, B, mode='same')
 
     # Shorten the final array if we extended it
     if extend:
