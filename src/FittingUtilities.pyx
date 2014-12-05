@@ -542,7 +542,7 @@ def ReduceResolutionFFT(data, resolution, extend=True, loglinear=True, nsig=5):
 
     # Shorten the final array if we extended it
     if extend:
-        conv = conv[before.size():-after.size()]
+        conv = conv[before.size:-after.size]
 
     newdata = data.copy()
     newdata.y = conv
