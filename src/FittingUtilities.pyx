@@ -520,9 +520,9 @@ def ReduceResolutionFFT(data, resolution, extend=True, loglinear=True, nsig=5):
         xgrid = np.logspace(x0, x1, data.size())
         data = RebinData(data, xgrid)
 
-    # Make the broadening kernel. Don't know where the NECESSARY factor of log(200) comes from...
+    # Make the broadening kernel.
     sigma = 1.0 / (2.0*resolution*np.sqrt(2*np.log(2.0)))
-    dx = np.log10(data.x[100]/data.x[99]) * np.log10(200.0)
+    dx = np.log(data.x[100]/data.x[99])
     d_logx = np.arange(0.0, nsig*sigma, dx)
     d_logx = np.r_[-d_logx[::-1][:-1], d_logx]
     B = np.exp(-0.5*(d_logx/sigma)**2)
