@@ -343,9 +343,7 @@ class Modeler:
 
 
         #Convert from relative humidity to concentration (ppm)
-        Psat = VaporPressure(temperature)
-        Pw = Psat * humidity / 100.0
-        h2o = Pw / (pressure - Pw) * 1e6
+        h2o = humidity_to_ppmv(humidity, temperature, pressure)
 
 
         #Start by scaling the abundances from those at 'alt' km
@@ -547,6 +545,24 @@ def VaporPressure(T):
         Pw = 0.0
 
     return Pw
+
+
+def humidity_to_ppmv(RH, T, P):
+    """
+    Given the relative humidity, temperature, and pressure, return the ppmv water concentration
+    """
+    Psat = VaporPressure(T)
+    Pw = Psat * RH / 100.0
+    h2o = Pw / (P - Pw) * 1e6
+    return h2o
+
+def ppmv_to_humidity(h2o, T, P):
+    """
+    Given the ppmv water concentration, temperature, and pressure, return the relative humidity
+    """
+    Psat = VaporPressure(T)
+    RH = 100.0*h2o*P/(Psat*(1e6+h2o))
+    return RH
 
 
 if __name__ == "__main__":
