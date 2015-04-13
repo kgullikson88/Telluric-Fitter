@@ -41,28 +41,28 @@ class xypoint:
             self.err = array[:, 3]
             return
 
-        if x != None:
+        if x is not None:
             size = x.size
-        if y != None:
+        if y is not None:
             size = y.size
-        if cont != None:
+        if cont is not None:
             size = cont.size
-        if err != None:
+        if err is not None:
             size = err.size
 
-        if x == None:
+        if x is None:
             self.x = np.arange(size, dtype='float64')
         else:
             self.x = x.copy()
-        if y == None:
+        if y is None:
             self.y = np.zeros(size)
         else:
             self.y = y.copy()
-        if cont == None:
+        if cont is None:
             self.cont = np.ones(size)
         else:
             self.cont = cont.copy()
-        if err == None:
+        if err is None:
             self.err = np.ones(self.y.size) * 1e9
             self.err[self.y > 0] = np.sqrt(self.y[self.y > 0])
         else:
