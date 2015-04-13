@@ -45,6 +45,7 @@ import MakeTape5
 
 
 
+
 # Dectionary giving the number to molecule name for LBLRTM
 MoleculeNumbers = {1: "H2O",
                    2: "CO2",
@@ -303,7 +304,8 @@ class Modeler:
 
     def MakeModel(self, pressure=795.0, temperature=283.0, lowfreq=4000, highfreq=4600, angle=45.0, humidity=50.0,
                   co2=368.5, o3=3.9e-2, n2o=0.32, co=0.14, ch4=1.8, o2=2.1e5, no=1.1e-19, so2=1e-4, no2=1e-4, nh3=1e-4,
-                  hno3=5.6e-4, lat=30.6, alt=2.1, wavegrid=None, resolution=None, save=False, libfile=None):
+                  hno3=5.6e-4, lat=30.6, alt=2.1, wavegrid=None, resolution=None, save=False, libfile=None,
+                  vac2air=True):
         """
         Here is the important function! All of the variables have default values,
           which you will want to override for any realistic use.
@@ -326,6 +328,7 @@ class Modeler:
           libfile:                Useful if generating a telluric library. The filename of the
                                   saved file will be written to this filename. Should be a string
                                   variable. Ignored if save==False
+          vac2air:                If True, which is the default, it converts the wavelengths from vacuum to air.
 
         """
 
@@ -433,9 +436,10 @@ class Modeler:
 
         #Correct for index of refraction of air (use IAU standard conversion from
         #  Morton, D. C. 1991, ApJS, 77, 119
-        wave_A = wavelength * units.nm.to(units.angstrom)  #Wavelength in angstroms
-        n = 1.0 + 2.735182e-4 + 131.4182 / wave_A ** 2 + 2.76249e8 / wave_A ** 4
-        wavelength /= n
+        if vac2air:
+            wave_A = wavelength * units.nm.to(units.angstrom)  # Wavelength in angstroms
+            n = 1.0 + 2.735182e-4 + 131.4182 / wave_A ** 2 + 2.76249e8 / wave_A ** 4
+            wavelength /= n
 
         if save:
             #Output filename
