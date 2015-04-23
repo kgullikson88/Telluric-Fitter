@@ -517,37 +517,37 @@ class TelluricFitter:
         """
         data = self.data
 
+        #Update self.const_pars to include the new values in fitpars
+        #  I know, it's confusing that const_pars holds some non-constant parameters...
+        fit_idx = 0
+        for i in range(len(self.parnames)):
+            if self.fitting[i]:
+                #Change from internal to bounded (physical) parameters
+                if self.bounds[i][1] < np.inf:
+                    self.const_pars[i] = self.bounds[i][0] + (np.sin(pars[fit_idx]*self.normalization[i]) + 1.0) * \
+                                                             (self.bounds[i][1] - self.bounds[i][0])/2.0
+                else:
+                    self.const_pars[i] = self.bounds[i][0] - 1.0 + \
+                                         np.sqrt((pars[fit_idx]*self.normalization[i])**2 + 1.0)
+                fit_idx += 1
+        self.DisplayVariables(fitonly=True)
+
+        #Extract parameters from pars and const_pars. They will have variable
+        #  names set from self.parnames
+        fit_idx = 0
+        for i in range(len(self.parnames)):
+            #Assign to local variables by the parameter name
+            exec ("%s = %g" % (self.parnames[i], self.const_pars[i]))
+
+
+        wavenum_start = 1e7 / waveend
+        wavenum_end = 1e7 / wavestart
+        lat = self.observatory["latitude"]
+        alt = self.observatory["altitude"]
+
+
+        #Generate the model:
         if model is None:
-            #Update self.const_pars to include the new values in fitpars
-            #  I know, it's confusing that const_pars holds some non-constant parameters...
-            fit_idx = 0
-            for i in range(len(self.parnames)):
-                if self.fitting[i]:
-                    #Change from internal to bounded (physical) parameters
-                    if self.bounds[i][1] < np.inf:
-                        self.const_pars[i] = self.bounds[i][0] + (np.sin(pars[fit_idx]*self.normalization[i]) + 1.0) * \
-                                                                 (self.bounds[i][1] - self.bounds[i][0])/2.0
-                    else:
-                        self.const_pars[i] = self.bounds[i][0] - 1.0 + \
-                                             np.sqrt((pars[fit_idx]*self.normalization[i])**2 + 1.0)
-                    fit_idx += 1
-            self.DisplayVariables(fitonly=True)
-
-            #Extract parameters from pars and const_pars. They will have variable
-            #  names set from self.parnames
-            fit_idx = 0
-            for i in range(len(self.parnames)):
-                #Assign to local variables by the parameter name
-                exec ("%s = %g" % (self.parnames[i], self.const_pars[i]))
-
-
-            wavenum_start = 1e7 / waveend
-            wavenum_end = 1e7 / wavestart
-            lat = self.observatory["latitude"]
-            alt = self.observatory["altitude"]
-
-
-            #Generate the model:
             model = self.Modeler.MakeModel(pressure, temperature, wavenum_start, wavenum_end, angle, h2o, co2, o3, n2o, co,
                                            ch4, o2, no, so2, no2, nh3, hno3, lat=lat, alt=alt, wavegrid=None,
                                            resolution=None)
@@ -570,7 +570,6 @@ class TelluricFitter:
                     return FittingUtilities.ReduceResolution(model, resolution)
                 else:
                     return model
-
 
         #Make a copy of the model before broadening it
         model_original = model.copy()
