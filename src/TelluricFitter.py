@@ -500,76 +500,80 @@ class TelluricFitter:
 
 
 
-    def GenerateModel(self, pars, nofit=False, separate_primary=False, return_resolution=False):
+    def GenerateModel(self, pars, nofit=False, separate_primary=False, return_resolution=False, broaden=False, model=None):
         """
         This function does the actual work of generating a model with the given parameters,
         fitting the continuum, making sure the model and data are well aligned in
         wavelength, and fitting the detector resolution. In general, it is not meant to be
         called directly by the user. However, the 'nofit' keyword turns this into a wrapper
         to MakeModel.Modeler().MakeModel() with all the appropriate parameters.
-
+        
+        :parameter pars: A list containing the parameters.
+        :parameter nofit: If true, it will not perform a fit to the data
+        :parameter separate_primary: If true, it will fit the primary as a smoothed version of the residuals.
+        :parameter return_resolution: If true, it will return the best-fit resolution.
+        :parameter broaden: If true and nofit=True, it will broaden the returned model by the expected detector resolution.
+        :parameter model: A DataStructures.xypoint instance containing an un-broadened telluric model. If given, it uses this instead of making one.
         """
         data = self.data
-        #Update self.const_pars to include the new values in fitpars
-        #  I know, it's confusing that const_pars holds some non-constant parameters...
-        fit_idx = 0
-        for i in range(len(self.parnames)):
-            if self.fitting[i]:
-                #Change from internal to bounded (physical) parameters
-                if self.bounds[i][1] < np.inf:
-                    self.const_pars[i] = self.bounds[i][0] + (np.sin(pars[fit_idx]*self.normalization[i]) + 1.0) * \
-                                                             (self.bounds[i][1] - self.bounds[i][0])/2.0
+
+        if model is None:
+            #Update self.const_pars to include the new values in fitpars
+            #  I know, it's confusing that const_pars holds some non-constant parameters...
+            fit_idx = 0
+            for i in range(len(self.parnames)):
+                if self.fitting[i]:
+                    #Change from internal to bounded (physical) parameters
+                    if self.bounds[i][1] < np.inf:
+                        self.const_pars[i] = self.bounds[i][0] + (np.sin(pars[fit_idx]*self.normalization[i]) + 1.0) * \
+                                                                 (self.bounds[i][1] - self.bounds[i][0])/2.0
+                    else:
+                        self.const_pars[i] = self.bounds[i][0] - 1.0 + \
+                                             np.sqrt((pars[fit_idx]*self.normalization[i])**2 + 1.0)
+                    fit_idx += 1
+            self.DisplayVariables(fitonly=True)
+
+            #Extract parameters from pars and const_pars. They will have variable
+            #  names set from self.parnames
+            fit_idx = 0
+            for i in range(len(self.parnames)):
+                #Assign to local variables by the parameter name
+                exec ("%s = %g" % (self.parnames[i], self.const_pars[i]))
+
+
+            wavenum_start = 1e7 / waveend
+            wavenum_end = 1e7 / wavestart
+            lat = self.observatory["latitude"]
+            alt = self.observatory["altitude"]
+
+
+            #Generate the model:
+            model = self.Modeler.MakeModel(pressure, temperature, wavenum_start, wavenum_end, angle, h2o, co2, o3, n2o, co,
+                                           ch4, o2, no, so2, no2, nh3, hno3, lat=lat, alt=alt, wavegrid=None,
+                                           resolution=None)
+
+            #Save each model if debugging
+            if self.debug and self.debug_level >= 5:
+                FittingUtilities.ensure_dir("Models/")
+                model_name = "Models/transmission" + "-%.2f" % pressure + "-%.2f" % temperature + "-%.1f" % h2o + "-%.1f" % angle + "-%.2f" % (
+                co2) + "-%.2f" % (o3 * 100) + "-%.2f" % ch4 + "-%.2f" % (co * 10)
+                np.savetxt(model_name, np.transpose((model.x, model.y)), fmt="%.8f")
+
+            #Interpolate to constant wavelength spacing
+            xgrid = np.linspace(model.x[0], model.x[-1], model.x.size)
+            model = FittingUtilities.RebinData(model, xgrid)
+
+            #Use nofit if you want a model with reduced resolution. Probably easier
+            #  to go through MakeModel directly though...
+            if data == None or nofit:
+                if broaden:
+                    return FittingUtilities.ReduceResolution(model, resolution)
                 else:
-                    self.const_pars[i] = self.bounds[i][0] - 1.0 + \
-                                         np.sqrt((pars[fit_idx]*self.normalization[i])**2 + 1.0)
-                fit_idx += 1
-        self.DisplayVariables(fitonly=True)
+                    return model
 
-        #Extract parameters from pars and const_pars. They will have variable
-        #  names set from self.parnames
-        fit_idx = 0
-        for i in range(len(self.parnames)):
-            #Assign to local variables by the parameter name
-            exec ("%s = %g" % (self.parnames[i], self.const_pars[i]))
-
-
-        wavenum_start = 1e7 / waveend
-        wavenum_end = 1e7 / wavestart
-        lat = self.observatory["latitude"]
-        alt = self.observatory["altitude"]
-
-
-        #Generate the model:
-        model = self.Modeler.MakeModel(pressure, temperature, wavenum_start, wavenum_end, angle, h2o, co2, o3, n2o, co,
-                                       ch4, o2, no, so2, no2, nh3, hno3, lat=lat, alt=alt, wavegrid=None,
-                                       resolution=None)
-
-        #Shift the x-axis, using the shift from previous iterations
-        #if self.debug:
-        #    print "Shifting by %.4g before fitting model" % self.shift
-        #if self.adjust_wave == "data":
-        #    data.x += self.shift
-        #elif self.adjust_wave == "model":
-        #    model.x -= self.shift
-
-        #Save each model if debugging
-        if self.debug and self.debug_level >= 5:
-            FittingUtilities.ensure_dir("Models/")
-            model_name = "Models/transmission" + "-%.2f" % pressure + "-%.2f" % temperature + "-%.1f" % h2o + "-%.1f" % angle + "-%.2f" % (
-            co2) + "-%.2f" % (o3 * 100) + "-%.2f" % ch4 + "-%.2f" % (co * 10)
-            np.savetxt(model_name, np.transpose((model.x, model.y)), fmt="%.8f")
-
-        #Interpolate to constant wavelength spacing
-        xgrid = np.linspace(model.x[0], model.x[-1], model.x.size)
-        model = FittingUtilities.RebinData(model, xgrid)
 
         #Make a copy of the model before broadening it
         model_original = model.copy()
-
-        #Use nofit if you want a model with reduced resolution. Probably easier
-        #  to go through MakeModel directly though...
-        if data == None or nofit:
-            return FittingUtilities.ReduceResolution(model, resolution)
 
         #Reduce to initial guess resolution
         if (resolution - 10 < self.resolution_bounds[0] or resolution + 10 > self.resolution_bounds[1]):
