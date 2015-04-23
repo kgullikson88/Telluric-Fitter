@@ -316,7 +316,7 @@ class TelluricFitter:
     ### -----------------------------------------------
 
     def Fit(self, data=None, resolution_fit_mode="gauss", fit_primary=False, fit_source=False, return_resolution=False,
-            adjust_wave="model", continuum_fit_order=7, wavelength_fit_order=3):
+            adjust_wave="model", continuum_fit_order=7, wavelength_fit_order=3, air_wave=True):
         """
         The main fitting function. Before calling this, the user MUST
           1: call FitVariable at least once, specifying which variables will be fit
@@ -358,6 +358,8 @@ class TelluricFitter:
         -wavelength_fit_order:  The polynomial order with which to adjust the wavelength fit. Note
                                 that the 'adjust_wave' input will determine whether the data or the
                                 telluric model is wavelength-adjusted.
+
+        -air_wave:              Are the wavelengths in air wavelengths? Default is True.
         """
 
         self.resolution_fit_mode = resolution_fit_mode
@@ -367,6 +369,7 @@ class TelluricFitter:
         self.continuum_fit_order = continuum_fit_order
         self.wavelength_fit_order = wavelength_fit_order
         self.return_resolution = return_resolution
+        self.air_wave = air_wave
 
         #Check if the user gave data to fit
         if data != None:
@@ -550,7 +553,7 @@ class TelluricFitter:
         if model is None:
             model = self.Modeler.MakeModel(pressure, temperature, wavenum_start, wavenum_end, angle, h2o, co2, o3, n2o, co,
                                            ch4, o2, no, so2, no2, nh3, hno3, lat=lat, alt=alt, wavegrid=None,
-                                           resolution=None)
+                                           resolution=None, vac2air=self.air_wave)
 
             #Save each model if debugging
             if self.debug and self.debug_level >= 5:
