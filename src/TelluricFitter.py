@@ -99,6 +99,7 @@ class TelluricFitter:
         self.chisq_vals = []
         self.ignore = []
         self.shift = 0  #The wavelength shift to make the model and data align
+        self.air_wave = True
 
         #Just open and close chisq_summary, to clear anything already there
         outfile = open("chisq_summary.dat", "w")
