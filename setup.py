@@ -302,7 +302,7 @@ requires = ['matplotlib',
             'fortranformat']
 
 setup(name='TelFit',
-      version='1.3',
+      version='1.3.0',
       author='Kevin Gullikson',
       author_email='kgulliks@astro.as.utexas.edu',
       url="http://www.as.utexas.edu/~kgulliks/projects.html",
