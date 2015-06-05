@@ -658,9 +658,9 @@ class TelluricFitter:
         done = False
         while not done:
             done = True
-	    if 'gauss' in self.resolution_fit_mode.lower() or min(model.y) > 0.95:
-	        model, resolution = self.FitResolution(data.copy(), model_original.copy(), resolution)	
-	    elif "svd" in self.resolution_fit_mode.lower():
+            if 'gauss' in self.resolution_fit_mode.lower() or min(model.y) > 0.95:
+                model, resolution = self.FitResolution(data.copy(), model_original.copy(), resolution)
+            elif "svd" in self.resolution_fit_mode.lower():
                 model, self.broadstuff = self.Broaden2(data.copy(), model_original.copy(), full_output=True)
             else:
                 done = False
