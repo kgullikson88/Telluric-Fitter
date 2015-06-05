@@ -194,8 +194,8 @@ def MakeLBLRTM():
     # Get the data files from directory
     ensure_dir(TELLURICMODELING)
     outfile = '{}aerlbl_package.tar.gz'.format(TELLURICMODELING)
-    if outfile not in os.listdir(TELLURICMODELING):
-        print('Downloading data from {}\n\tand putting it in directory {}'.format(DATA_URL, TELLURICMODELING))
+    if not os.path.exists(outfile):
+        print('Downloading data from {} and putting it in directory {}'.format(DATA_URL, TELLURICMODELING))
         download_file(DATA_URL, outfile)
         subprocess.check_call(['tar', '-xzf', outfile, '-C', TELLURICMODELING])
 
@@ -218,7 +218,7 @@ def MakeLBLRTM():
 
     #Generate a TAPE3, if necessary.
     if "TAPE3" not in os.listdir("{}lnfl".format(TELLURICMODELING)):
-        MakeTAPE3("{}lnfl".format(TELLURICMODELING))
+        MakeTAPE3("{}lnfl/".format(TELLURICMODELING))
 
 
     #Make run directories with all of the relevant files/scripts/etc.
