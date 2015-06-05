@@ -1,25 +1,37 @@
 from distutils.core import setup
-from setuptools.command.install import install
 from distutils.extension import Extension
 import os
 import subprocess
 import sys
 
+from setuptools.command.install import install
+
+
+def import_error_message(package):
+    print("You need to install cython before running setup.py")
+    print("Run 'pip install {}'".format(package))
+    print("       or")
+    print("'apt-get install {}' (if using a debian-based linux OS)".format(package))
+    print("       or")
+    print("'conda install {}' (if you use anaconda python)".format(package))
+
+
 try:
     from Cython.Distutils import build_ext
 except ImportError:
-    print "You need to install cython before running setup.py"
-    print "Run 'pip install cython'"
-    print '       or'
-    print "'apt-get install cython' (if using a debian-based linux OS)"
+    import_error_message('cython')
     sys.exit()
+
 try:
     import numpy
 except ImportError:
-    print "You need to install numpy just to run setup.py"
-    print "Run 'pip install numpy'"
-    print '       or'
-    print "'apt-get install python-numpy' (if using a debian-based linux OS)"
+    import_error_message('numpy')
+    sys.exit()
+
+try:
+    import requests
+except ImportError:
+    import_error_message('requests')
     sys.exit()
 
 """
