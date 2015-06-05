@@ -222,6 +222,7 @@ def MakeLBLRTM():
 
 
     #Make run directories with all of the relevant files/scripts/etc.
+    # THIS MAY NOT WORK IF PIP DOESN'T HAVE DATA WHERE I THINK IT WILL BE!
     for i in range(1, num_rundirs + 1):
         directory = "{}rundir{}".format(TELLURICMODELING, i)
         print(u"Making {0:s}".format(directory))
@@ -232,21 +233,21 @@ def MakeLBLRTM():
 
         if "TAPE3" in os.listdir(directory):
             subprocess.check_call(["rm", "%s/TAPE3" % directory])
-        subprocess.check_call(["ln", "-s", "%s/lnfl/TAPE3" % (os.getcwd()), "%s/TAPE3" % directory])
+        subprocess.check_call(["ln", "-s", u"{0:s}/lnfl/TAPE3".format(TELLURICMODELING),
+                               u"{0:s}/TAPE3".format(directory)])
 
-        lblrtm_ex = [f for f in os.listdir("./lblrtm") if f.startswith("lblrtm")][0]
+        lblrtm_ex = [f for f in os.listdir("{}lblrtm".format(TELLURICMODELING)) if f.startswith("lblrtm")][0]
         if "lblrtm" in os.listdir(directory):
-            subprocess.check_call(["rm", "%s/lblrtm" % directory])
-        subprocess.check_call(["ln", "-s", "%s/lblrtm/%s" % (os.getcwd(), lblrtm_ex), "%s/lblrtm" % directory])
+            subprocess.check_call(["rm", u"{0:s}/lblrtm".format(directory)])
+        subprocess.check_call(["ln", "-s", "{0:s}/lblrtm/{1:s}".format(TELLURICMODELING, lblrtm_ex),
+                               u"{0:s}/lblrtm".format(directory)])
 
         #Make sure the permissions are correct:
-        subprocess.check_call(["chmod", "-R", "777", "%s/" % directory])
-        #cmd = "chmod 777 %s/*" %directory
-        #subprocess.check_call(cmd, shell=True)
-        #subprocess.check_call(["chmod", "777", "%s/*" %directory])
+        subprocess.check_call(["chmod", "-R", "777", u"{0:s}/".format(directory)])
 
 
     #Finally, we need to set the environment variable TELLURICMODELING.
+    """
     line = "export TELLURICMODELING=%s/\n" % os.getcwd()
     print "\nLBLRTM is all set up! The TelluricFitter code requires an environment variable to know where the lblrtm run directories are. You can set the appropriate environment variable with the following command:"
     print "\n\t%s" % line
@@ -261,6 +262,7 @@ def MakeLBLRTM():
             infile.write(line)
         infile.close()
         subprocess.check_call(line, shell=True)
+    """
 
     return
 
@@ -269,8 +271,6 @@ def MakeLBLRTM():
 The following classes call MakeLBLRTM, and then do the normal
   installation stuff
 """
-
-
 class CustomInstallCommand(install):
     def run(self):
         MakeLBLRTM()
@@ -287,8 +287,6 @@ class CustomBuildExtCommand(build_ext):
   This only does the install. Useful if something went wrong
   but LBLRTM already installed
 """
-
-
 class OnlyInstall(install):
     def run(self):
         install.run(self)
@@ -303,7 +301,7 @@ requires = ['matplotlib',
             'fortranformat']
 
 setup(name='TelFit',
-      version='1.2',
+      version='1.3',
       author='Kevin Gullikson',
       author_email='kgulliks@astro.as.utexas.edu',
       url="http://www.as.utexas.edu/~kgulliks/projects.html",
