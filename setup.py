@@ -1,10 +1,10 @@
-from distutils.core import setup
-from distutils.extension import Extension
+from distutils.core import setup, Extension
+# from distutils.extension import Extension
 import os
 import subprocess
 import sys
 
-from setuptools.command.install import install
+from distutils.command.install import install
 
 
 def import_error_message(package):
