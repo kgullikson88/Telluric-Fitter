@@ -1,11 +1,12 @@
-from distutils.core import setup, Extension
+# from distutils.core import setup, Extension
+from setuptools import setup, Extension
 # from distutils.extension import Extension
 import os
 import subprocess
 import sys
 
-from distutils.command.install import install
-
+# from distutils.command.install import install
+from setuptools.command.install import install
 
 def import_error_message(package):
     print("You need to install cython before running setup.py")
