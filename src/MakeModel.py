@@ -46,6 +46,7 @@ import MakeTape5
 
 
 
+
 # Dectionary giving the number to molecule name for LBLRTM
 MoleculeNumbers = {1: "H2O",
                    2: "CO2",
@@ -94,10 +95,13 @@ on the bottom of this file.
 """
 
 
+class ModelerException(Exception):
+    pass
+
 class Modeler:
     def __init__(self, debug=False,
                  NumRunDirs=4,
-                 TelluricModelingDirRoot=os.environ["TELLURICMODELING"],
+                 TelluricModelingDirRoot='{}/.TelFit/'.format(os.environ['HOME']),
                  nmolecules=12):
 
         Atmosphere = defaultdict(list)
@@ -105,6 +109,13 @@ class Modeler:
         self.debug = debug
         if not TelluricModelingDirRoot.endswith("/"):
             TelluricModelingDirRoot = TelluricModelingDirRoot + "/"
+        if not 'rundir1' in os.listdir(TelluricModelingDirRoot):
+            try:
+                TelluricModelingDirRoot = os.environ['TELLURICMODELING']
+            except KeyError:
+                raise ModelerException('Directory {} is not configured correctly or does not exist, and the '
+                                       'environment variable TELLURICMODELING is not set!'.format(
+                    TelluricModelingDirRoot))
         self.TelluricModelingDirRoot = TelluricModelingDirRoot
 
         #Determine working directories
