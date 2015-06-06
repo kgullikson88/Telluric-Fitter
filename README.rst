@@ -4,7 +4,7 @@ TelFit Code
 This code will fit the telluric absorption spectrum in data, using
 LBLRTM. More details can be found in the manual and examples, but the
 installation and run procedure are outlined below. If you use this code,
-please cite `my paper`_
+please cite `my paper`_.
 
 Installation
 ------------
@@ -27,7 +27,7 @@ The bolded entries are required *before* installation, so make sure you get them
 
     pip install TelFit
 
-to install TelFit. It may take a while, as it needs to build the LBLRTM and some of its standard input files.
+to install TelFit. It may take a while, as it needs to build the LBLRTM code and some of its standard input files.
 
 Running TelFit
 --------------
