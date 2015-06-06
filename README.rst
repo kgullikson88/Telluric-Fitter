@@ -9,33 +9,25 @@ please cite `my paper`_
 Installation
 ------------
 
-To install this code, you will need to download lblrtm from
-http://rtweb.aer.com/lblrtm.html. Extract the package, and put the
-individual tar.gz files in the top-level directory. Alternatively, you
-can download the full TelFit source, which includes LBLRTM, from
-http://www.as.utexas.edu/~kgulliks/projects.html. You MUST install the
-following dependencies before TelFit:
+This code requires the following packages:
 
--  matplotlib
--  scipy
--  numpy v1.6 or greater
--  cython
+  - matplotlib
+  - **numpy v1.6 or greater**
+  - scipy v0.13 or greater
+  - astropy v0.2 or greater
+  - lockfile
+  - pysynphot v0.7 or greater
+  - fortranformat
+  - **cython**
+  - **requests**
 
-Then, the command
+The bolded entries are required *before* installation, so make sure you get them from pip, apt-get/yum, or conda (depending on your OS and linux distribution). The setup script will attempt to install the rest if you don't have them, but I suggest doing it yourself just to make sure nothing goes wrong. Once you have the dependencies, simply type
 
 .. code:: bash
 
-    python setup.py install [--user]
+    pip install TelFit
 
-should build lblrtm, and set up TelFit to run. It may take a while, as
-it is building inputs for the LBLRTM code. The final step of the
-automatic build procedure should be to download and install the other
-dependencies:
-
--  fortranformat
--  astropy
--  pysynphot
--  lockfile
+to install TelFit. It may take a while, as it needs to build the LBLRTM and some of its standard input files.
 
 Running TelFit
 --------------
