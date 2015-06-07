@@ -31,7 +31,8 @@ class Mock(MagicMock):
             return Mock()
 
 MOCK_MODULES = ['FittingUtilities', 'numpy', 'scipy', 'matplotlib', 'scipy.interpolate', 'numpy.polynomial',
-                'lockfile', 'scipy.optimize', 'astropy', 'pysynphot', 'fortranformat', 'cython', 'requests']
+                'lockfile', 'scipy.optimize', 'astropy', 'pysynphot', 'fortranformat', 'cython', 'requests',
+                'scipy.linalg']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # -- General configuration ------------------------------------------------
