@@ -4,6 +4,7 @@ from setuptools import setup, Extension
 import os
 import subprocess
 import sys
+import glob
 
 # from distutils.command.install import install
 from setuptools.command.install import install
@@ -308,8 +309,21 @@ requires = ['matplotlib',
             'cython',
             'requests']
 
+example_files = []
+for d in glob.glob(os.path.join('examples', '*')):
+    dir = os.path.join(TELLURICMODELING, d)
+    files = [f for f in glob.glob(os.path.join(d, '*'))]
+    example_files.append((dir, files))
+
+data_files = [('', ['data/MIPAS_atmosphere_profile',
+                        'data/ParameterFile',
+                        'data/TAPE5',
+                        'data/runlblrtm_v3.sh'])]
+data_files.extend(example_files)
+
+
 setup(name='TelFit',
-      version='1.3.7',
+      version='1.3.11',
       author='Kevin Gullikson',
       author_email='kgulliks@astro.as.utexas.edu',
       url="http://www.as.utexas.edu/~kgulliks/projects.html",
@@ -326,10 +340,7 @@ setup(name='TelFit',
       cmdclass={'build_ext': CustomBuildExtCommand,
                 'FittingUtilities': build_ext,
                 'SkipLBL': OnlyInstall},
-      data_files=[('', ['data/MIPAS_atmosphere_profile',
-                        'data/ParameterFile',
-                        'data/TAPE5',
-                        'data/runlblrtm_v3.sh']), ],
+      data_files=data_files,
       install_requires=requires,
       setup_requires=['cython', 'requests', 'numpy>=1.6'],
       package_dir={'': 'src'}
