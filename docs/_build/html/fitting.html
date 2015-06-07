@@ -1,0 +1,163 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Simple Model Fitting &mdash; TelFit 1.3.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.3.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="TelFit 1.3.0 documentation" href="index.html" />
+    <link rel="up" title="TelFit Tutorial" href="Tutorial.html" />
+    <link rel="prev" title="Generating a Telluric Model with TelFit" href="Modeling.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="Modeling.html" title="Generating a Telluric Model with TelFit"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">TelFit 1.3.0 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="Tutorial.html" accesskey="U">TelFit Tutorial</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="simple-model-fitting">
+<h1>Simple Model Fitting<a class="headerlink" href="#simple-model-fitting" title="Permalink to this headline">¶</a></h1>
+<p>Alright making a model is pretty simple, but you probably want to go further and find the <em>best</em> model for your data. This is a more complicated thing, so requires a bit more code. The rest of this tutorial will assume that you have imported a few modules:</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">TelluricFitter</span>
+<span class="kn">import</span> <span class="nn">DataStructures</span>
+</pre></div>
+</div>
+<p>The first thing we need to do is make an instance of the TelluricFitter class, and set some basic information about your observatory.</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">fitter</span> <span class="o">=</span> <span class="n">TelluricFitter</span><span class="o">.</span><span class="n">TelluricFitter</span><span class="p">()</span>
+<span class="n">observatory</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;latitude&quot;</span><span class="p">:</span> <span class="mf">30.5</span><span class="p">,</span>
+               <span class="s">&quot;altitude&quot;</span><span class="p">:</span> <span class="mf">2.5</span><span class="p">}</span>
+<span class="n">fitter</span><span class="o">.</span><span class="n">SetObservatory</span><span class="p">(</span><span class="n">observatory</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You just need to give the TelluricFitter class a latitude and altitude. For your convenience, there are a few common observatories already loaded into TelFit, so you can also set the observatory with</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">fitter</span><span class="o">.</span><span class="n">SetObservatory</span><span class="p">(</span><span class="n">obsname</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>where &#8220;obsname&#8221; is one of the following:</p>
+<blockquote>
+<div><ul class="simple">
+<li>McDonald</li>
+<li>CTIO</li>
+<li>Mauna Kea</li>
+<li>La Silla</li>
+<li>Paranal</li>
+</ul>
+</div></blockquote>
+<p>You can easily add your own observatory if you wish by editing the source code for the SetObservatory method. Alright, now that we have initialized the fitter class we need to tell it how what variables to fit and give their initial values. In this example, we will just fit the relative humidity and oxygen mixing ratio. You should be able to get an initial value for the humidity from your fits header or archived weather data; if not, guess with something like 50%. We will also set some constant values that are important.</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">fitter</span><span class="o">.</span><span class="n">FitVariable</span><span class="p">({</span><span class="s">&#39;h2o&#39;</span><span class="p">:</span> <span class="n">humidity_guess</span><span class="p">,</span>
+                    <span class="s">&#39;o2&#39;</span><span class="p">:</span> <span class="mf">2.12e5</span><span class="p">})</span>   <span class="c"># This is a good initial guess for the O2 abundance</span>
+
+<span class="n">fitter</span><span class="o">.</span><span class="n">AdjustValue</span><span class="p">({</span><span class="s">&quot;angle&quot;</span><span class="p">:</span> <span class="n">angle</span><span class="p">,</span>
+                    <span class="s">&quot;pressure&quot;</span><span class="p">:</span> <span class="n">pressure</span><span class="p">,</span>
+                    <span class="s">&quot;resolution&quot;</span><span class="p">:</span> <span class="n">resolution</span><span class="p">,</span>
+                    <span class="s">&quot;wavestart&quot;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mf">20.0</span><span class="p">,</span>
+                    <span class="s">&quot;waveend&quot;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mf">20.0</span><span class="p">})</span>
+</pre></div>
+</div>
+<p>You will notice that the input for both of the methods is a dictionary with parameter name and value. For the FitVariable method, the value is an initial guess. For the AdjustValue method, the value you give it is fixed (with the exception of detector resolution).Now let&#8217;s set some bounds on the fitted parameters as well. You can set bounds on any parameter, but it will be ignored if it is a constant.</p>
+<div class="code python highlight-python"><div class="highlight"><pre>fitter.SetBounds({&#39;h2o&#39;: [1.0, 99.0],
+                  &#39;o2&#39;: [5e4, 1e6],
+                  &#39;resolution&#39;: 50000., 70000.})
+</pre></div>
+</div>
+<p>You will notice that we set bounds on the &#8216;resolution&#8217; parameter as well. The detector resolution is always fit, and you should always give it bounds that are pretty close to the true value.</p>
+<p>Finally, we can perform the fit. This will take quite some time to run, so go get some coffee if you are following along...</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">model</span> <span class="o">=</span> <span class="n">fitter</span><span class="o">.</span><span class="n">Fit</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>There are lots of options to Fit to control how it does everything. Check the API if the defaults aren&#8217;t working for you. The data object you pass to Fit must be an object of type DataStructures.xypoint, which you can create with the following code (assuming you have your data in numpy arrays called &#8216;wave&#8217;, &#8216;flux&#8217;, and &#8216;continuum&#8217;)</p>
+<div class="code python highlight-python"><div class="highlight"><pre><span class="n">data</span> <span class="o">=</span> <span class="n">DataStructures</span><span class="o">.</span><span class="n">xypoint</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">wave</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">flux</span><span class="p">,</span> <span class="n">cont</span><span class="o">=</span><span class="n">continuum</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The continuum does not need to be great, since TelFit estimates that as well after dividing out the telluric model.</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="Modeling.html"
+                        title="previous chapter">Generating a Telluric Model with TelFit</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/fitting.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Kevin Gullikson.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.3</a>
+      
+      |
+      <a href="_sources/fitting.txt"
+          rel="nofollow">Page source</a></li>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,220 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>API for MakeModel &mdash; TelFit 1.3.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.3.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="TelFit 1.3.0 documentation" href="index.html" />
+    <link rel="up" title="API for TelFit" href="API.html" />
+    <link rel="prev" title="API for TelluricFitter" href="TelluricFitter.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="TelluricFitter.html" title="API for TelluricFitter"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">TelFit 1.3.0 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="API.html" accesskey="U">API for TelFit</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="api-for-makemodel">
+<h1>API for MakeModel<a class="headerlink" href="#api-for-makemodel" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="MakeModel.Modeler">
+<em class="property">class </em><code class="descclassname">MakeModel.</code><code class="descname">Modeler</code><span class="sig-paren">(</span><em>debug=False</em>, <em>TelluricModelingDirRoot='/home/kgullikson/.TelFit/'</em>, <em>nmolecules=12</em><span class="sig-paren">)</span><a class="headerlink" href="#MakeModel.Modeler" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="MakeModel.Modeler.EditProfile">
+<code class="descname">EditProfile</code><span class="sig-paren">(</span><em>profilename</em>, <em>profile_height</em>, <em>profile_value</em><span class="sig-paren">)</span><a class="headerlink" href="#MakeModel.Modeler.EditProfile" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>This function will take a np array as a profile, and stitch it into the</dt>
+<dd>MIPAS atmosphere profile read in in __init__</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>profilename</strong> &#8211; A string with the name of the profile to edit.
+Should be either &#8216;pressure&#8217;, &#8216;temperature&#8217;, or
+one of the molecules given in the MakeModel.MoleculeNumbers
+dictionary</li>
+<li><strong>profile_height</strong> &#8211; A np array with the height in the atmosphere (in km)</li>
+<li><strong>profile_value</strong> &#8211; A np array with the value of the profile parameter at
+each height given in profile_height.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">None</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="MakeModel.Modeler.MakeModel">
+<code class="descname">MakeModel</code><span class="sig-paren">(</span><em>pressure=795.0</em>, <em>temperature=283.0</em>, <em>lowfreq=4000</em>, <em>highfreq=4600</em>, <em>angle=45.0</em>, <em>humidity=50.0</em>, <em>co2=368.5</em>, <em>o3=0.039</em>, <em>n2o=0.32</em>, <em>co=0.14</em>, <em>ch4=1.8</em>, <em>o2=210000.0</em>, <em>no=1.1e-19</em>, <em>so2=0.0001</em>, <em>no2=0.0001</em>, <em>nh3=0.0001</em>, <em>hno3=0.00056</em>, <em>lat=30.6</em>, <em>alt=2.1</em>, <em>wavegrid=None</em>, <em>resolution=None</em>, <em>save=False</em>, <em>libfile=None</em>, <em>vac2air=True</em><span class="sig-paren">)</span><a class="headerlink" href="#MakeModel.Modeler.MakeModel" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Here is the important function! All of the variables have default values,</dt>
+<dd>which you will want to override for any realistic use.</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>pressure</strong> &#8211; Pressure at telescope altitude (hPa)</li>
+<li><strong>temperature</strong> &#8211; Temperature at telescope altitude (Kelvin)</li>
+<li><strong>lowfreq</strong> &#8211; The starting wavenumber (cm^-1)</li>
+<li><strong>highfreq</strong> &#8211; The ending wavenumber (cm^-1)</li>
+<li><strong>angle</strong> &#8211; The zenith distance of the telescope (degrees). This is related to
+the airmass (z) through z = sec(angle)</li>
+<li><strong>humidity</strong> &#8211; Percent relative humidity at the telescope altitude.</li>
+<li><strong>co2</strong> &#8211; Mixing ratio of this molecule (parts per million by volumne)</li>
+<li><strong>o3</strong> &#8211; Mixing ratio of this molecule (parts per million by volumne)</li>
+<li><strong>n2o</strong> &#8211; Mixing ratio of this molecule (parts per million by volumne)</li>
+<li><strong>co</strong> &#8211; Mixing ratio of this molecule (parts per million by volumne)</li>
+<li><strong>ch4</strong> &#8211; Mixing ratio of this molecule (parts per million by volumne)</li>
+<li><strong>o2</strong> &#8211; Mixing ratio of this molecule (parts per million by volumne)</li>
+<li><strong>no</strong> &#8211; Mixing ratio of this molecule (parts per million by volumne)</li>
+<li><strong>so2</strong> &#8211; Mixing ratio of this molecule (parts per million by volumne)</li>
+<li><strong>no2</strong> &#8211; Mixing ratio of this molecule (parts per million by volumne)</li>
+<li><strong>nh3</strong> &#8211; Mixing ratio of this molecule (parts per million by volumne)</li>
+<li><strong>hno3</strong> &#8211; Mixing ratio of this molecule (parts per million by volumne)</li>
+<li><strong>lat</strong> &#8211; The latitude of the observatory (degrees)</li>
+<li><strong>alt</strong> &#8211; The altitude of the observatory above sea level (km)</li>
+<li><strong>wavegrid</strong> &#8211; If given, the model will be resampled to this grid.
+Should be a 1D np array</li>
+<li><strong>resolution</strong> &#8211; If given, it will reduce the resolution by convolving
+with a gaussian of appropriate width. Should be a float
+with R=lam/dlam</li>
+<li><strong>save</strong> &#8211; If true, the generated model is saved. The filename will be
+printed to the screen.</li>
+<li><strong>libfile</strong> &#8211; Useful if generating a telluric library. The filename of the
+saved file will be written to this filename. Should be a string
+variable. Ignored if save==False</li>
+<li><strong>vac2air</strong> &#8211; If True (default), it converts the wavelengths from vacuum to air</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">DataStructures.xypoint instance with the telluric model. The x-axis
+is in nanometers and the y-axis is in fractional transmission.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="MakeModel.Modeler.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>debug=False</em>, <em>TelluricModelingDirRoot='/home/kgullikson/.TelFit/'</em>, <em>nmolecules=12</em><span class="sig-paren">)</span><a class="headerlink" href="#MakeModel.Modeler.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize a modeler instance</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>debug</strong> &#8211; If True, it will print some extra information to the screen when making telluric models.</li>
+<li><strong>TelluricModelingDirRoot</strong> &#8211; Root directory to do the actual telluric modeling. The default
+installation puts this in ~/.TelFit/</li>
+<li><strong>nmolecules</strong> &#8211; The number of molecules to include in the telluric model. Probably don&#8217;t change
+this, and definitely don&#8217;t increase it!</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">None</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="TelluricFitter.html"
+                        title="previous chapter">API for TelluricFitter</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/MakeModel.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Kevin Gullikson.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.3</a>
+      
+      |
+      <a href="_sources/MakeModel.txt"
+          rel="nofollow">Page source</a></li>
+    </div>
+
+    
+
+    
+  </body>
+</html>

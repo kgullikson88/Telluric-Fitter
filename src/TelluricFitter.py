@@ -66,6 +66,14 @@ import DataStructures
 
 class TelluricFitter:
     def __init__(self, debug=False, debug_level=2):
+        """
+        Initialize the TelluricFitter class.
+
+        :param debug: Flag to print a bunch of messages to screen for debugging purposes
+        :param debug_level: An integer from 1-5 that controls how much gets printed. 1 is the least and 5 is the most.
+
+        :return: An instance of TelluricFitter.
+        """
         # Set up parameters
         self.parnames = ["pressure", "temperature", "angle", "resolution", "wavestart", "waveend",
                          "h2o", "co2", "o3", "n2o", "co", "ch4", "o2", "no",
@@ -113,8 +121,10 @@ class TelluricFitter:
         """
         Display the value of each of the parameters, and show whether it is being fit or not
 
-        -fitonly:  bool variable. If true, it only shows the variables being fit. Otherwise,
-                   it shows all variables.
+        :param fitonly: bool variable. If true, it only shows the variables being fit. Otherwise,
+                        it shows all variables.
+
+        :return: None
         """
         print "%.15s\tValue\t\tFitting?\tBounds" % ("Parameter".ljust(15))
         print "-------------\t-----\t\t-----\t\t-----"
@@ -136,8 +146,12 @@ class TelluricFitter:
         """
         Add one or more variables to the list being fit.
 
-        - vardict:   a dictionary where the key is the parameter
-                     name and the value is the value of that parameter.
+        :param vardict: a dictionary where the key is the parameter
+                     name and the value is the initial guess for that parameter.
+                     Valid parameter names can be found by invoking
+                     DisplayVariables(fitonly=False)
+
+        :return: None
         """
         for par in vardict.keys():
             try:
@@ -155,9 +169,19 @@ class TelluricFitter:
 
     def AdjustValue(self, vardict):
         """
-        Similar to FitVariable, but this just adjusts the value of a constant parameter.
-        Warning! If the variable will be removed from the fitting list, so DO NOT use this
-        to adjust the value of a parameter you want fitted.
+        Adjust the value of a constant parameter. This is useful for something like
+        setting the pressure or the telescope zenith distance, which will be known very
+        well and is important to getting a good fit, but does not need to be varied.
+
+        Warning: The variable will be removed from the list of variables to fit, so
+        DO NOT use this to adjust the value of a parameter you want TelFit to adjust!
+
+        :param vardict: a dictionary where the key is the parameter
+                        name and the value is the value of that parameter.
+                        Valid parameter names can be found by invoking
+                        DisplayVariables(fitonly=False)
+
+        :return: None
         """
         for par in vardict.keys():
             try:
@@ -191,6 +215,18 @@ class TelluricFitter:
 
 
     def SetBounds(self, bounddict):
+        """
+        Set bounds on one or more parameters.
+
+        :param vardict: a dictionary where the key is the parameter
+                     name and the value is a list of size 2 containing
+                     the lower and upper bounds. You can provide one-sided
+                     bounds using np.inf or -np.inf.
+                     Valid parameter names can be found by invoking
+                     DisplayVariables(fitonly=False)
+
+        :return: None
+        """
         """
         Similar to FitVariable, but it sets bounds on the variable. This can technically
           be done for any variable, but is only useful to set bounds for those variables
@@ -254,7 +290,7 @@ class TelluricFitter:
     def ImportData(self, data):
         """
         Function for the user to give the data. The data should be in the form of
-          a DataStructures.xypoint structure.
+          a DataStructures.xypoint structure, and the x-units MUST be nanometers.
         """
         if not isinstance(data, DataStructures.xypoint):
             raise TypeError("ImportData Error! Given data is not a DataStructures.xypoint structure!")
@@ -270,15 +306,17 @@ class TelluricFitter:
     def EditAtmosphereProfile(self, profilename, profile_height, profile_value):
         """
         Edits the atmosphere profile for a given parameter. This is just a wrapper
-          for the MakeModel.Modeler method, but the docstring is replicated below:
+        for the MakeModel.Modeler method, but the docstring is replicated below:
 
-        -profilename:  A string with the name of the profile to edit.
+        :param profilename: A string with the name of the profile to edit.
                        Should be either 'pressure', 'temperature', or
                        one of the molecules given in the MakeModel.MoleculeNumbers
                        dictionary
-        -profile_height:  A np array with the height in the atmosphere (in km)
-        -profile_value:   A np array with the value of the profile parameter at
-                          each height given in profile_height.
+        :param profile_height: A np array with the height in the atmosphere (in km)
+        :param profile_value: A np array with the value of the profile parameter at
+                              each height given in profile_height.
+
+        :return: None
         """
         self.Modeler.EditProfile(profilename, profile_height, profile_value)
 
@@ -292,7 +330,7 @@ class TelluricFitter:
           in the chi-squared calculation. Useful for stellar or interstellar
           lines.
 
-        -region:  Can be either a list of size 2 with the beginning and ending
+        :param region:  Can be either a list of size 2 with the beginning and ending
                   wavelength range to ignore, or a list of lists giving several
                   wavelength ranges at once.
         """
@@ -320,47 +358,50 @@ class TelluricFitter:
             adjust_wave="model", continuum_fit_order=7, wavelength_fit_order=3, air_wave=True):
         """
         The main fitting function. Before calling this, the user MUST
-          1: call FitVariable at least once, specifying which variables will be fit
-          2: Set resolution bounds (any other bounds are optional)
 
+           1 call FitVariable at least once, specifying which variables will be fit
+           2 Set resolution bounds (any other bounds are optional)
 
-        -data:                  If given, this should be a DataStructures.xypoint instance
-                                giving the data you wish to fit. In previous versions, this
-                                had to be given separately in the 'ImportData' method.
-
-        -resolution_fit_mode:   controls which function is used to estimate the resolution.
-                                "SVD" is for singlular value decomposition, while "gauss"
-                                is for convolving with a gaussian (and fitting the width
-                                of the guassian to give the best fit)
-
-        -fit_source:            determines whether an iterative smoothing is applied to the
-                                data to approximate the source spectrum. Only works if the
-                                source spectrum has broad lines. If true, this function returns both
-                                the best-fit model and the source estimate.
-
-        -return_resolution:     controls whether the best-fit resolution is returned to the user.
-                                One case I have used this for is to fit echelle data of late-type
-                                stars by getting all the best-fit parameters from redder orders,
-                                and then applying those atmospheric parameters to the rest of the
-                                orders.
-
-        -adjust_wave:           can be set to either 'data' or 'model'. To wavelength calibrate the
+        :param data: If given, this should be a DataStructures.xypoint instance
+                     giving the data you wish to fit. The units of the .x attribute MUST be nanometers!
+        :param resolution_fit_mode: controls which function is used to estimate the resolution.
+                                    "SVD" is for singlular value decomposition, while "gauss"
+                                    is for convolving with a gaussian (and fitting the width
+                                    of the guassian to give the best fit). I have found the 'gauss'
+                                    is best when the telluric lines are pretty weak, such as in much
+                                    of the optical spectrum. For strong telluric lines, SVD is both
+                                    faster and more accurate.
+        :param fit_primary: Deprecated. See fit_source
+        :param fit_source:  determines whether an iterative smoothing is applied to the
+                            data to approximate the source spectrum. Only works if the
+                            source spectrum has broad lines. If true, this function returns both
+                            the best-fit model and the source estimate.
+        :param return_resolution:  controls whether the best-fit resolution is returned to the user.
+                                   One case I have used this for is to fit echelle data of late-type
+                                   stars by getting all the best-fit parameters from redder orders,
+                                   and then applying those atmospheric parameters to the rest of the
+                                   orders.
+        :param adjust_wave:     Can be set to either 'data' or 'model'. To wavelength calibrate the
                                 data to the telluric lines, set to 'data'. If you think the wavelength
                                 calibration is good on the data (such as Th-Ar lines in the optical),
                                 then set to 'model' Note that currently, the vacuum --> air conversion
                                 for the telluric model is done in a very approximate sense, so
                                 adjusting the data wavelengths may introduce a small (few km/s) offset
-                                from what it should be.
-
-        -continuum_fit_order:   The polynomial order with which to fit the continuum. It uses a
-                                sigma-clipping algorithm so that the continuum is not strongly
-                                affected by stellar lines (either absorption or emission)
-
-        -wavelength_fit_order:  The polynomial order with which to adjust the wavelength fit. Note
-                                that the 'adjust_wave' input will determine whether the data or the
-                                telluric model is wavelength-adjusted.
-
-        -air_wave:              Are the wavelengths in air wavelengths? Default is True.
+                                from what it should be. That is fine for relative RVs, but probably not
+                                for absolute RVs.
+        :param continuum_fit_order:  The polynomial order with which to fit the continuum. It uses a
+                                     sigma-clipping algorithm so that the continuum is not strongly
+                                     affected by stellar lines (either absorption or emission)
+        :param wavelength_fit_order: The polynomial order with which to adjust the wavelength fit. Note
+                                     that the 'adjust_wave' input will determine whether the data or the
+                                     telluric model is wavelength-adjusted.
+        :param air_wave:  Are the wavelengths in air wavelengths? Default is True.
+        :return: The best-fit telluric model, as a DataStructures.xypoint instance where the x-axis is
+                 sampled the same as the data (so you should be able to directly divide the two). If
+                 fit_source = True, this method also returns the estimate for the source spectrum *before*
+                 the telluric model. If return_resolution is True, it also returns a float with the
+                 best resolution fit. The return order is:
+                 source_spec, model_spec, resolution
         """
 
         self.resolution_fit_mode = resolution_fit_mode
@@ -448,7 +489,7 @@ class TelluricFitter:
 
         #Finally, return the best-fit model
         if self.fit_source:
-            return self.GenerateModel(fitpars, separate_primary=True, return_resolution=return_resolution)
+            return self.GenerateModel(fitpars, separate_source=True, return_resolution=return_resolution)
         else:
             return self.GenerateModel(fitpars, return_resolution=return_resolution)
 
@@ -504,20 +545,30 @@ class TelluricFitter:
 
 
 
-    def GenerateModel(self, pars, nofit=False, separate_primary=False, return_resolution=False, broaden=False, model=None):
+    def GenerateModel(self, pars, nofit=False, separate_source=False, return_resolution=False, broaden=False, model=None):
         """
         This function does the actual work of generating a model with the given parameters,
         fitting the continuum, making sure the model and data are well aligned in
         wavelength, and fitting the detector resolution. In general, it is not meant to be
         called directly by the user. However, the 'nofit' keyword turns this into a wrapper
         to MakeModel.Modeler().MakeModel() with all the appropriate parameters.
-        
-        :parameter pars: A list containing the parameters.
-        :parameter nofit: If true, it will not perform a fit to the data
-        :parameter separate_primary: If true, it will fit the primary as a smoothed version of the residuals.
-        :parameter return_resolution: If true, it will return the best-fit resolution.
-        :parameter broaden: If true and nofit=True, it will broaden the returned model by the expected detector resolution.
-        :parameter model: A DataStructures.xypoint instance containing an un-broadened telluric model. If given, it uses this instead of making one.
+
+        :param pars: A list of the parameters currently being fit (as given in self.FitVariable).
+        :param nofit: If true, it will not perform a fit to the data and simply return the model.
+        :param separate_source: If true, it will fit the source spectrum as a smoothed version of the residuals.
+                                Useful for spectra with broad lines.
+        :param return_resolution: If true, it will return the best-fit resolution.
+        :param broaden: If true and nofit=True, it will broaden the returned model by the expected detector resolution.
+                        Ignored if nofit=False
+        :param model: A DataStructures.xypoint instance containing an un-broadened telluric model.
+                      If given, it uses this instead of making one.
+
+        :return:  The best-fit telluric model, as a DataStructures.xypoint instance where the x-axis is
+                 sampled the same as the data (so you should be able to directly divide the two). If
+                 separate_source = True, this method also returns the estimate for the source spectrum *before*
+                 the telluric model. If return_resolution is True, it also returns a float with the
+                 best resolution fit. The return order is:
+                 source_spec, model_spec, resolution
         """
         data = self.data
 
@@ -610,7 +661,7 @@ class TelluricFitter:
         data.cont = FittingUtilities.Continuum(data.x, resid, fitorder=self.continuum_fit_order, lowreject=2,
                                                highreject=3)
 
-        if separate_primary or self.fit_source:
+        if separate_source or self.fit_source:
             print "Generating Primary star model"
             primary_star = data.copy()
             primary_star.y = FittingUtilities.Iterative_SV(resid / data.cont, 61, 4, lowreject=2, highreject=3, numiters=5)
@@ -669,7 +720,7 @@ class TelluricFitter:
 
         self.data = data
         self.first_iteration = False
-        if separate_primary:
+        if separate_source:
             if return_resolution:
                 return primary_star, model, resolution
             else:

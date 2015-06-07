@@ -100,9 +100,18 @@ class ModelerException(Exception):
 
 class Modeler:
     def __init__(self, debug=False,
-                 NumRunDirs=4,
                  TelluricModelingDirRoot='{}/.TelFit/'.format(os.environ['HOME']),
                  nmolecules=12):
+        """
+        Initialize a modeler instance
+
+        :param debug: If True, it will print some extra information to the screen when making telluric models.
+        :param TelluricModelingDirRoot: Root directory to do the actual telluric modeling. The default
+                                        installation puts this in ~/.TelFit/
+        :param nmolecules: The number of molecules to include in the telluric model. Probably don't change
+                           this, and definitely don't increase it!
+        :return: None
+        """
 
         Atmosphere = defaultdict(list)
         indices = {}
@@ -190,13 +199,15 @@ class Modeler:
         This function will take a np array as a profile, and stitch it into the
           MIPAS atmosphere profile read in in __init__
 
-        -profilename:  A string with the name of the profile to edit.
+        :param profilename: A string with the name of the profile to edit.
                        Should be either 'pressure', 'temperature', or
                        one of the molecules given in the MakeModel.MoleculeNumbers
                        dictionary
-        -profile_height:  A np array with the height in the atmosphere (in km)
-        -profile_value:   A np array with the value of the profile parameter at
-                          each height given in profile_height.
+        :param profile_height: A np array with the height in the atmosphere (in km)
+        :param profile_value: A np array with the value of the profile parameter at
+                              each height given in profile_height.
+        :return: None
+
         """
         #Translate the (string) name of the profile to a number
         profilenum = -1
@@ -320,27 +331,39 @@ class Modeler:
         """
         Here is the important function! All of the variables have default values,
           which you will want to override for any realistic use.
-        Arguments/Units:
-          Pressure:               Pressure at telescope altitude (hPa)
-          Temperature:            Temperature at telescope altitude (Kelvin)
-          lowfreq, highfreq:      low and high wavenumber (cm^-1)
-          angle:                  The zenith angle of the telescope (degrees)
-          humidity:               percent humidity
-          co2 - hno3 abundances:  ppmv concentration
-          lat:                    The latitude of the observatory (degrees)
-          alt:                    The altitude of the observatory above sea level (km)
-          wavegrid:               If given, the model will be resampled to this grid.
-                                  Should be a np array
-          resolution:             If given, it will reduce the resolution by convolving
-                                  with a gaussian of appropriate width. Should be a float
-                                  with R=lam/dlam
-          save:                   If true, the generated model is saved. The filename will be
-                                  printed to the screen.
-          libfile:                Useful if generating a telluric library. The filename of the
-                                  saved file will be written to this filename. Should be a string
-                                  variable. Ignored if save==False
-          vac2air:                If True, which is the default, it converts the wavelengths from vacuum to air.
-
+        :param pressure:       Pressure at telescope altitude (hPa)
+        :param temperature:    Temperature at telescope altitude (Kelvin)
+        :param lowfreq:        The starting wavenumber (cm^-1)
+        :param highfreq:       The ending wavenumber (cm^-1)
+        :param angle:          The zenith distance of the telescope (degrees). This is related to
+                               the airmass (z) through z = sec(angle)
+        :param humidity:       Percent relative humidity at the telescope altitude.
+        :param co2:            Mixing ratio of this molecule (parts per million by volumne)
+        :param o3:             Mixing ratio of this molecule (parts per million by volumne)
+        :param n2o:            Mixing ratio of this molecule (parts per million by volumne)
+        :param co:             Mixing ratio of this molecule (parts per million by volumne)
+        :param ch4:            Mixing ratio of this molecule (parts per million by volumne)
+        :param o2:             Mixing ratio of this molecule (parts per million by volumne)
+        :param no:             Mixing ratio of this molecule (parts per million by volumne)
+        :param so2:            Mixing ratio of this molecule (parts per million by volumne)
+        :param no2:            Mixing ratio of this molecule (parts per million by volumne)
+        :param nh3:            Mixing ratio of this molecule (parts per million by volumne)
+        :param hno3:           Mixing ratio of this molecule (parts per million by volumne)
+        :param lat:            The latitude of the observatory (degrees)
+        :param alt:            The altitude of the observatory above sea level (km)
+        :param wavegrid:       If given, the model will be resampled to this grid.
+                               Should be a 1D np array
+        :param resolution:     If given, it will reduce the resolution by convolving
+                               with a gaussian of appropriate width. Should be a float
+                               with R=lam/dlam
+        :param save:           If true, the generated model is saved. The filename will be
+                               printed to the screen.
+        :param libfile:        Useful if generating a telluric library. The filename of the
+                               saved file will be written to this filename. Should be a string
+                               variable. Ignored if save==False
+        :param vac2air:        If True (default), it converts the wavelengths from vacuum to air
+        :return:               DataStructures.xypoint instance with the telluric model. The x-axis
+                               is in nanometers and the y-axis is in fractional transmission.
         """
 
         self.FindWorkingDirectory()
