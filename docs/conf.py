@@ -23,7 +23,7 @@ import shlex
 sys.path.insert(0, os.path.abspath('../src/'))
 
 # Mock FittingUtilities
-from unittest.mock import MagicMock
+from mock import Mock as MagicMock
 
 class Mock(MagicMock):
     @classmethod
