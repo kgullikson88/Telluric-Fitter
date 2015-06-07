@@ -7,10 +7,7 @@ import matplotlib.pyplot as plt
 from astropy.io import fits as pyfits
 from astropy import units, constants
 from astropy import units, constants
-import FittingUtilities
-
-import TelluricFitter
-import DataStructures
+from telfit import TelluricFitter, Modeler, DataStructures, FittingUtilities
 import MakeModel
 
 
@@ -128,7 +125,7 @@ def OutputFitsFileExtensions(column_dicts, template, outfilename, mode="append",
 
 if __name__ == "__main__":
     # Initialize fitter
-    fitter = TelluricFitter.TelluricFitter()
+    fitter = TelluricFitter()
     fitter.SetObservatory("CTIO")
 
     # Read in the fits file using astropy
