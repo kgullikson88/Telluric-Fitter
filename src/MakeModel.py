@@ -104,7 +104,7 @@ class Modeler:
                  nmolecules=12):
         """
         Initialize a modeler instance
-        
+
         :param debug: If True, it will print some extra information to the screen when making telluric models.
         :param TelluricModelingDirRoot: Root directory to do the actual telluric modeling. The default
                                         installation puts this in ~/.TelFit/
