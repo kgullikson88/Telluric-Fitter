@@ -7,14 +7,13 @@ Alright making a model is pretty simple, but you probably want to go further and
 
     import numpy as np
     import matplotlib.pyplot as plt
-    import TelluricFitter
-    import DataStructures
+    from telfit import TelluricFitter, DataStructures
 
 The first thing we need to do is make an instance of the TelluricFitter class, and set some basic information about your observatory.
 
 .. code:: python
 
-    fitter = TelluricFitter.TelluricFitter()
+    fitter = TelluricFitter()
     observatory = {"latitude": 30.5,
                    "altitude": 2.5}
     fitter.SetObservatory(observatory)
