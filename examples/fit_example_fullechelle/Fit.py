@@ -287,7 +287,7 @@ if __name__ == "__main__":
 
         #Generate the model using the best-fit parameters
         primary, model = fitter.GenerateModel(fitpars,
-                                              separate_primary=True,
+                                              separate_source=True,
                                               return_resolution=False)
 
         # Get the data back from the fitter.
@@ -299,7 +299,7 @@ if __name__ == "__main__":
         if min(model.y) > 0.98:
             wave0 = order.x.mean()
             fitter.shift = vel / (constants.c.cgs.value * units.cm.to(units.km)) * wave0
-            model = fitter.GenerateModel(fitpars, separate_primary=False, nofit=True)
+            model = fitter.GenerateModel(fitpars, separate_source=False, nofit=True)
             model.x /= (1.0 + vel / (constants.c.cgs.value * units.cm.to(units.km)))
             model = FittingUtilities.RebinData(model, order.x)
             data = order.copy()

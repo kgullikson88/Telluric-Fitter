@@ -67,10 +67,12 @@ import DataStructures
 class TelluricFitter:
     def __init__(self, debug=False, debug_level=2):
         """
-        Initialize the TelluricFitter class
+        Initialize the TelluricFitter class.
+
         :param debug: Flag to print a bunch of messages to screen for debugging purposes
         :param debug_level: An integer from 1-5 that controls how much gets printed. 1 is the least and 5 is the most.
-        :return:
+
+        :return: An instance of TelluricFitter.
         """
         # Set up parameters
         self.parnames = ["pressure", "temperature", "angle", "resolution", "wavestart", "waveend",
@@ -118,8 +120,10 @@ class TelluricFitter:
     def DisplayVariables(self, fitonly=False):
         """
         Display the value of each of the parameters, and show whether it is being fit or not
+
         :param fitonly: bool variable. If true, it only shows the variables being fit. Otherwise,
-                   it shows all variables.
+                        it shows all variables.
+
         :return: None
         """
         print "%.15s\tValue\t\tFitting?\tBounds" % ("Parameter".ljust(15))
@@ -141,10 +145,12 @@ class TelluricFitter:
     def FitVariable(self, vardict):
         """
         Add one or more variables to the list being fit.
+
         :param vardict: a dictionary where the key is the parameter
                      name and the value is the initial guess for that parameter.
                      Valid parameter names can be found by invoking
                      DisplayVariables(fitonly=False)
+
         :return: None
         """
         for par in vardict.keys():
@@ -169,10 +175,12 @@ class TelluricFitter:
 
         Warning: The variable will be removed from the list of variables to fit, so
         DO NOT use this to adjust the value of a parameter you want TelFit to adjust!
+
         :param vardict: a dictionary where the key is the parameter
-                     name and the value is the value of that parameter.
-                     Valid parameter names can be found by invoking
-                     DisplayVariables(fitonly=False)
+                        name and the value is the value of that parameter.
+                        Valid parameter names can be found by invoking
+                        DisplayVariables(fitonly=False)
+
         :return: None
         """
         for par in vardict.keys():
@@ -209,12 +217,14 @@ class TelluricFitter:
     def SetBounds(self, bounddict):
         """
         Set bounds on one or more parameters.
+
         :param vardict: a dictionary where the key is the parameter
                      name and the value is a list of size 2 containing
                      the lower and upper bounds. You can provide one-sided
                      bounds using np.inf or -np.inf.
                      Valid parameter names can be found by invoking
                      DisplayVariables(fitonly=False)
+
         :return: None
         """
         """
@@ -296,7 +306,7 @@ class TelluricFitter:
     def EditAtmosphereProfile(self, profilename, profile_height, profile_value):
         """
         Edits the atmosphere profile for a given parameter. This is just a wrapper
-          for the MakeModel.Modeler method, but the docstring is replicated below:
+        for the MakeModel.Modeler method, but the docstring is replicated below:
 
         :param profilename: A string with the name of the profile to edit.
                        Should be either 'pressure', 'temperature', or
@@ -305,6 +315,7 @@ class TelluricFitter:
         :param profile_height: A np array with the height in the atmosphere (in km)
         :param profile_value: A np array with the value of the profile parameter at
                               each height given in profile_height.
+
         :return: None
         """
         self.Modeler.EditProfile(profilename, profile_height, profile_value)
@@ -347,8 +358,10 @@ class TelluricFitter:
             adjust_wave="model", continuum_fit_order=7, wavelength_fit_order=3, air_wave=True):
         """
         The main fitting function. Before calling this, the user MUST
-          1: call FitVariable at least once, specifying which variables will be fit
-          2: Set resolution bounds (any other bounds are optional)
+
+           1 call FitVariable at least once, specifying which variables will be fit
+           2 Set resolution bounds (any other bounds are optional)
+
         :param data: If given, this should be a DataStructures.xypoint instance
                      giving the data you wish to fit. The units of the .x attribute MUST be nanometers!
         :param resolution_fit_mode: controls which function is used to estimate the resolution.
@@ -539,6 +552,7 @@ class TelluricFitter:
         wavelength, and fitting the detector resolution. In general, it is not meant to be
         called directly by the user. However, the 'nofit' keyword turns this into a wrapper
         to MakeModel.Modeler().MakeModel() with all the appropriate parameters.
+
         :param pars: A list of the parameters currently being fit (as given in self.FitVariable).
         :param nofit: If true, it will not perform a fit to the data and simply return the model.
         :param separate_source: If true, it will fit the source spectrum as a smoothed version of the residuals.
@@ -548,7 +562,13 @@ class TelluricFitter:
                         Ignored if nofit=False
         :param model: A DataStructures.xypoint instance containing an un-broadened telluric model.
                       If given, it uses this instead of making one.
-        :return:
+
+        :return:  The best-fit telluric model, as a DataStructures.xypoint instance where the x-axis is
+                 sampled the same as the data (so you should be able to directly divide the two). If
+                 separate_source = True, this method also returns the estimate for the source spectrum *before*
+                 the telluric model. If return_resolution is True, it also returns a float with the
+                 best resolution fit. The return order is:
+                 source_spec, model_spec, resolution
         """
         data = self.data
 
