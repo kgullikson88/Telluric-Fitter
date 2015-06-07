@@ -7,6 +7,9 @@ import sys
 
 # from distutils.command.install import install
 from setuptools.command.install import install
+import numpy
+from Cython.Distutils import build_ext
+import requests
 
 """
 def import_error_message(package):
