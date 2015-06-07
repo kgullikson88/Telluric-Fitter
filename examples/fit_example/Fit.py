@@ -17,15 +17,13 @@
 
 import numpy
 import matplotlib.pyplot as plt
-from astropy import units, constants
 
-import TelluricFitter
-import DataStructures
+from telfit import TelluricFitter, DataStructures
 
 
 if __name__ == "__main__":
     # Initialize fitter
-    fitter = TelluricFitter.TelluricFitter(debug=False)
+    fitter = TelluricFitter(debug=False)
 
     #Set the observatory location with a keyword
     fitter.SetObservatory("McDonald")
@@ -48,30 +46,29 @@ if __name__ == "__main__":
     resolution = 60000.0  #Resolution lambda/delta-lambda
 
 
-    #Define variables to be fit, and give initial guesses
-    #Let temperature float, but we will tightly constrain it with bounds (it should be known well)
-    fitter.FitVariable({"h2o": humidity,
-                        "o2": 2.12e5,
-                        "temperature": temperature})
+    #Define variables to be fit, and give initial guesses.
+    # We will just fit the relative humidity in this example.
+    fitter.FitVariable({"h2o": humidity})
 
     #Adjust parameters that will not be fit, but are important
     fitter.AdjustValue({"angle": angle,
                         "pressure": pressure,
+                        "temperature": temperature,
                         "resolution": resolution,
                         "wavestart": data.x[0] - 20.0,
-                        "waveend": data.x[-1] + 20.0})
+                        "waveend": data.x[-1] + 20.0,
+                        "o2": 2.12e5})
 
     #Set bounds on the variables being fit (resolution is always fit inside each loop)
+    # The bounds on o2 and temperature are ignored, since they are not being fit.
     fitter.SetBounds({"h2o": [1.0, 99.0],
                       "o2": [5e4, 1e6],
                       "temperature": [temperature - 5.0, temperature + 5.0],
                       "resolution": [resolution / 2.0, resolution * 2.0]})
 
-    #Import the data to be fit to the fitter
-    fitter.ImportData(data)
 
     #Perform the fit. See the documentation for all the options for fit
-    model = fitter.Fit(resolution_fit_mode="gauss", adjust_wave="model")
+    model = fitter.Fit(data=data, resolution_fit_mode="gauss", adjust_wave="model")
 
     #Get the improved continuum from the fitter
     data.cont = fitter.data.cont

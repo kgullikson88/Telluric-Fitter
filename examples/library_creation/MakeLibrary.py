@@ -15,7 +15,7 @@
 
 """
 
-import MakeModel
+from telfit import Modeler
 
 
 humidity = range(10, 90, 10)  # Let humidity go from 10% to 90%, in steps of 10%
@@ -26,7 +26,7 @@ wavestart = 500
 waveend = 900
 
 # Make an instance of the Modeler class
-modeler = MakeModel.Modeler()
+modeler = Modeler()
 for h2o in humidity:
     for o2val in o2:
         modeler.MakeModel(humidity=h2o, o2=o2val, save=True, libfile="Library_Files.dat", lowfreq=1e7 / waveend,

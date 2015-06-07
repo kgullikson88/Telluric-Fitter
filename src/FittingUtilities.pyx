@@ -33,8 +33,6 @@ cimport cython
 from libc.math cimport exp, log, sqrt
 import os
 from astropy import units as u
-import statsmodels.api as sm
-from statsmodels.robust.norms import TukeyBiweight
 
 DTYPE = np.float64
 ctypedef np.float64_t DTYPE_t
@@ -125,24 +123,6 @@ def Continuum(x, y, fitorder=3, lowreject=2, highreject=4, numiter=10000, functi
       x2 = np.delete(x2, badpoints)
       y2 = np.delete(y2, badpoints)
   return fit(x - x2.mean())
-
-
-def RobustFit(x,y, fitorder=3, weight_fcn=TukeyBiweight()):
-    """
-    Performs a robust fit (less sensitive to outliers) to x and y
-    :param x: A numpy.ndarray with the x-coordinates of the function to fit
-    :param y: A numpy.ndarray with the y-coordinates of the function to fit
-    :param fitorder: The order of the fit
-    :return:
-    """
-    #Re-scale x for stability
-    x = (x - x.mean())/x.std()
-    X = np.ones(x.size)
-    for i in range(1, fitorder+1):
-        X = np.column_stack((X, x**i))
-    fitter = sm.RLM(y, X, M=weight_fcn)
-    results = fitter.fit()
-    return results.predict(X)
 
 
 
