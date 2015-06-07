@@ -30,7 +30,7 @@ class Mock(MagicMock):
     def __getattr__(cls, name):
             return Mock()
 
-MOCK_MODULES = ['FittingUtilities']
+MOCK_MODULES = ['FittingUtilities', 'numpy', 'scipy', 'matplotlib']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # -- General configuration ------------------------------------------------
