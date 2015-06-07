@@ -280,7 +280,7 @@ class TelluricFitter:
     def ImportData(self, data):
         """
         Function for the user to give the data. The data should be in the form of
-          a DataStructures.xypoint structure.
+          a DataStructures.xypoint structure, and the x-units MUST be nanometers.
         """
         if not isinstance(data, DataStructures.xypoint):
             raise TypeError("ImportData Error! Given data is not a DataStructures.xypoint structure!")
@@ -350,7 +350,7 @@ class TelluricFitter:
           1: call FitVariable at least once, specifying which variables will be fit
           2: Set resolution bounds (any other bounds are optional)
         :param data: If given, this should be a DataStructures.xypoint instance
-                     giving the data you wish to fit.
+                     giving the data you wish to fit. The units of the .x attribute MUST be nanometers!
         :param resolution_fit_mode: controls which function is used to estimate the resolution.
                                     "SVD" is for singlular value decomposition, while "gauss"
                                     is for convolving with a gaussian (and fitting the width
