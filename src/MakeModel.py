@@ -42,7 +42,7 @@ import DataStructures
 import MakeTape5
 
 
-
+DEFAULT_TELLURICMODELING = '{}/.TelFit/'.format(os.environ['HOME'])
 
 
 
@@ -100,7 +100,7 @@ class ModelerException(Exception):
 
 class Modeler:
     def __init__(self, debug=False,
-                 TelluricModelingDirRoot='{}/.TelFit/'.format(os.environ['HOME']),
+                 TelluricModelingDirRoot=DEFAULT_TELLURICMODELING,
                  nmolecules=12):
         """
         Initialize a modeler instance
@@ -331,7 +331,7 @@ class Modeler:
         """
         Here is the important function! All of the variables have default values,
           which you will want to override for any realistic use.
-          
+
         :param pressure:       Pressure at telescope altitude (hPa)
         :param temperature:    Temperature at telescope altitude (Kelvin)
         :param lowfreq:        The starting wavenumber (cm^-1)
