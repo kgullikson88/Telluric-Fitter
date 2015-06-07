@@ -8,6 +8,7 @@ import sys
 # from distutils.command.install import install
 from setuptools.command.install import install
 
+"""
 def import_error_message(package):
     print("You need to install cython before running setup.py")
     print("Run 'pip install {}'".format(package))
@@ -34,6 +35,7 @@ try:
 except ImportError:
     import_error_message('requests')
     sys.exit()
+"""
 
 """
 Below are some default values, which the user may change
@@ -299,10 +301,12 @@ requires = ['matplotlib',
             'astropy>=0.2',
             'lockfile',
             'pysynphot>=0.7',
-            'fortranformat']
+            'fortranformat',
+            'cython',
+            'requests']
 
 setup(name='TelFit',
-      version='1.3.0',
+      version='1.3.2',
       author='Kevin Gullikson',
       author_email='kgulliks@astro.as.utexas.edu',
       url="http://www.as.utexas.edu/~kgulliks/projects.html",
@@ -323,6 +327,7 @@ setup(name='TelFit',
                         'data/TAPE5',
                         'data/runlblrtm_v3.sh']), ],
       install_requires=requires,
+      setup_requires=['cython', 'requests', 'numpy>=1.6'],
       package_dir={'': 'src'}
 )
 
