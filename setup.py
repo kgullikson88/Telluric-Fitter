@@ -8,11 +8,11 @@ import glob
 
 # from distutils.command.install import install
 from setuptools.command.install import install
-import numpy
-from Cython.Distutils import build_ext
-import requests
+#import numpy
+#from Cython.Distutils import build_ext
+#import requests
 
-"""
+
 def import_error_message(package):
     print("You need to install cython before running setup.py")
     print("Run 'pip install {}'".format(package))
@@ -39,7 +39,7 @@ try:
 except ImportError:
     import_error_message('requests')
     sys.exit()
-"""
+
 
 """
 Below are some default values, which the user may change
@@ -323,11 +323,18 @@ data_files.extend(example_files)
 
 
 setup(name='TelFit',
-      version='1.3.0',
+      version='1.3.1',
       author='Kevin Gullikson',
       author_email='kgulliks@astro.as.utexas.edu',
       url="http://www.as.utexas.edu/~kgulliks/projects.html",
       description='A package to fit the telluric absorption in astronomical spectra.',
+      license='The MIT License: http://www.opensource.org/licenses/mit-license.php',
+      classifiers = [
+        'Development Status :: 5 - Production/Stable',
+        'Intended Audience :: Developers',
+        'Operating System :: OS Independent',
+        'License :: OSI Approved :: MIT License',
+        'Programming Language :: Python :: 2.7',],
       py_modules=['TelluricFitter',
                   'MakeModel',
                   'DataStructures',
