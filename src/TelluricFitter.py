@@ -157,7 +157,7 @@ class TelluricFitter:
         for par in vardict.keys():
             try:
                 idx = self.parnames.index(par)
-                if par in ['wavestart', 'waveend'] and isinstance(vardict[par], u.quantities.Quantity):
+                if par in ['wavestart', 'waveend'] and isinstance(vardict[par], u.quantity.Quantity):
                     # Convert to nanometers
                     vardict[par] = vardict[par].to(u.nm).value
                 self.const_pars[idx] = vardict[par]
@@ -190,7 +190,7 @@ class TelluricFitter:
         for par in vardict.keys():
             try:
                 idx = self.parnames.index(par)
-                if par in ['wavestart', 'waveend'] and isinstance(vardict[par], u.quantities.Quantity):
+                if par in ['wavestart', 'waveend'] and isinstance(vardict[par], u.quantity.Quantity):
                     # Convert to nanometers
                     vardict[par] = vardict[par].to(u.nm).value
                 self.const_pars[idx] = vardict[par]
@@ -245,7 +245,7 @@ class TelluricFitter:
                 bounddict[par][1] = np.inf
             try:
                 idx = self.parnames.index(par)
-                if par in ['wavestart', 'waveend'] and isinstance(bounddict[par], u.quantities.Quantity):
+                if par in ['wavestart', 'waveend'] and isinstance(bounddict[par], u.quantity.Quantity):
                     # Convert to nanometers
                     bounddict[par][0] = bounddict[par][0].to(u.nm).value
                     bounddict[par][1] = bounddict[par][1].to(u.nm).value

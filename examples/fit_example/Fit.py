@@ -19,6 +19,7 @@ import numpy
 import matplotlib.pyplot as plt
 
 from telfit import TelluricFitter, DataStructures
+from astropy import units as u
 
 
 if __name__ == "__main__":
@@ -35,7 +36,7 @@ if __name__ == "__main__":
 
     #Read in the spectrum and store as an xypoint
     x, y, c, e = numpy.loadtxt("Spectrum.dat", unpack=True)
-    data = DataStructures.xypoint(x=x, y=y, cont=c, err=e)
+    data = DataStructures.xypoint(x=x*10*u.angstrom, y=y, cont=c, err=e)
 
 
     #The following are parameters that should be in the fits header for an observation
@@ -55,8 +56,8 @@ if __name__ == "__main__":
                         "pressure": pressure,
                         "temperature": temperature,
                         "resolution": resolution,
-                        "wavestart": data.x[0] - 20.0,
-                        "waveend": data.x[-1] + 20.0,
+                        "wavestart": data.x[0] - 20.0*u.nm,
+                        "waveend": data.x[-1] + 20.0*u.nm,
                         "o2": 2.12e5})
 
     #Set bounds on the variables being fit (resolution is always fit inside each loop)
