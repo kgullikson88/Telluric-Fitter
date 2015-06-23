@@ -59,6 +59,7 @@ from scipy.optimize import leastsq, fminbound
 from scipy.linalg import svd, diagsvd
 from scipy import mat
 import matplotlib.pyplot as plt
+from astropy import units as u
 
 import MakeModel
 import DataStructures
@@ -290,11 +291,17 @@ class TelluricFitter:
     def ImportData(self, data):
         """
         Function for the user to give the data. The data should be in the form of
-          a DataStructures.xypoint structure, and the x-units MUST be nanometers.
+          a DataStructures.xypoint structure, and the x-units must either be an
+          instance of astropy.quantities.Quantity or in nanometers.
         """
         if not isinstance(data, DataStructures.xypoint):
             raise TypeError("ImportData Error! Given data is not a DataStructures.xypoint structure!")
-        self.data = data.copy()
+        tmp = data.copy()
+        self.xunits = u.nm
+        if isinstance(tmp.x, u.quantity.Quantity):
+            self.xunits = tmp.x.unit
+            tmp.x = tmp.x.to(u.nm).value
+        self.data = tmp
         return
 
 
@@ -489,10 +496,18 @@ class TelluricFitter:
 
         #Finally, return the best-fit model
         if self.fit_source:
-            return self.GenerateModel(fitpars, separate_source=True, return_resolution=return_resolution)
+            out_list = self.GenerateModel(fitpars, separate_source=True, return_resolution=return_resolution)
+            for i, item in enumerate(out_list):
+                if isinstance(item, DataStructures.xypoint):
+                    item.x *= u.nm.to(self.xunits)
+                    out_list[i] = item
+            return out_list
         else:
-            return self.GenerateModel(fitpars, return_resolution=return_resolution)
-
+            output = self.GenerateModel(fitpars, return_resolution=return_resolution)
+            if return_resolution:
+                output[0].x *= u.nm.to(self.xunits)
+            else output.x *= u.nm.to(self.xunits)
+            return output
 
 
         ### -----------------------------------------------
@@ -622,9 +637,11 @@ class TelluricFitter:
             #  to go through MakeModel directly though...
             if data == None or nofit:
                 if broaden:
-                    return FittingUtilities.ReduceResolution(model, resolution)
-                else:
-                    return model
+                    model = FittingUtilities.ReduceResolution(model, resolution)
+
+                # Give units to the output model
+                model.x *= u.nm.to(self.xunits)
+                return model
 
         #Make a copy of the model before broadening it
         model_original = model.copy()
