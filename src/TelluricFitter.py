@@ -109,6 +109,9 @@ class TelluricFitter:
         self.ignore = []
         self.shift = 0  #The wavelength shift to make the model and data align
         self.air_wave = True
+        self.source_fcn = smoothing_source_fcn
+        self.source_args = [61, 4]
+        self.source_kwargs = dict(lowreject=2, highreject=3, numiters=5)
 
         #Just open and close chisq_summary, to clear anything already there
         outfile = open("chisq_summary.dat", "w")
@@ -371,8 +374,9 @@ class TelluricFitter:
     ###         Main Fit Function!
     ### -----------------------------------------------
 
-    def Fit(self, data=None, resolution_fit_mode="gauss", fit_primary=False, fit_source=False, return_resolution=False,
-            adjust_wave="model", continuum_fit_order=7, wavelength_fit_order=3, air_wave=True):
+    def Fit(self, data=None, resolution_fit_mode="gauss", fit_primary=False, return_resolution=False,
+            adjust_wave="model", continuum_fit_order=7, wavelength_fit_order=3, air_wave=True,
+            fit_source=False, source_fcn=None, source_args=None, source_kwargs=None):
         """
         The main fitting function. Before calling this, the user MUST
 
@@ -389,10 +393,6 @@ class TelluricFitter:
                                     of the optical spectrum. For strong telluric lines, SVD is both
                                     faster and more accurate.
         :param fit_primary: Deprecated. See fit_source
-        :param fit_source:  determines whether an iterative smoothing is applied to the
-                            data to approximate the source spectrum. Only works if the
-                            source spectrum has broad lines. If true, this function returns both
-                            the best-fit model and the source estimate.
         :param return_resolution:  controls whether the best-fit resolution is returned to the user.
                                    One case I have used this for is to fit echelle data of late-type
                                    stars by getting all the best-fit parameters from redder orders,
@@ -413,6 +413,21 @@ class TelluricFitter:
                                      that the 'adjust_wave' input will determine whether the data or the
                                      telluric model is wavelength-adjusted.
         :param air_wave:  Are the wavelengths in air wavelengths? Default is True.
+        :param fit_source:  determines whether an attempt to fit the source spectrum (the spectrum of the 
+                            object you are fitting, not the telluric lines) is made. If true, this function 
+                            returns both the best-fit model and the source estimate. By default, it fits
+                            the source spectrum with a simple smoothing kernel that works well for rapidly
+                            rotating stars. However, you can give a custom source fitting function with the
+                            'source_fcn' keyword.
+        :param source_fcn:  A function that takes a DataStructures.xypoint instance and any number of 
+                            arguments/keyword arguments after it. This function should expect a spectrum of
+                            the source (without telluric lines) and attempt to fit it. 
+                            Warning: This function will be called in every iteration, so do not use a function
+                            that takes more than ~1 second, or the telluric fit will slow down considerably!
+        :param source_args: A list of arguments to give to the source function.
+        :param source_kwargs: A dictionary of keyword arguments to give to the source function.
+
+
         :return: The best-fit telluric model, as a DataStructures.xypoint instance where the x-axis is
                  sampled the same as the data (so you should be able to directly divide the two). If
                  fit_source = True, this method also returns the estimate for the source spectrum *before*
@@ -435,6 +450,17 @@ class TelluricFitter:
             self.ImportData(data)
         elif self.data == None:
             raise AttributeError("\n\nError! Must supply data to fit\n\n!")
+
+        # Set up the source function
+        if source_fcn is not None:
+            self.source_fcn = source_fcn
+            self.fit_source = True
+            
+        if self.fit_source:
+            if source_args is not None:
+                self.source_args = source_args
+            if source_kwargs is not None:
+                self.source_kwargs = source_kwargs
 
 
         #Make sure resolution bounds are given (resolution is always fit)
@@ -504,21 +530,30 @@ class TelluricFitter:
                 idx += 1
 
 
-        #Finally, return the best-fit model
+        #Finally, return the best-fit model and other things. Add the same x-units they gave in the data to the spectra we return!
         if self.fit_source:
-            out_list = self.GenerateModel(fitpars, separate_source=True, return_resolution=return_resolution)
-            for i, item in enumerate(out_list):
-                if isinstance(item, DataStructures.xypoint):
-                    item.x *= u.nm.to(self.xunits)
-                    out_list[i] = item
-            return out_list
-        else:
-            output = self.GenerateModel(fitpars, return_resolution=return_resolution)
             if return_resolution:
-                output[0].x *= u.nm.to(self.xunits)
+                source, model, R = self.GenerateModel(fitpars, separate_source=True, return_resolution=return_resolution)
+                source.x *= u.nm.to(self.xunits)
+                model.x *= u.nm.to(self.xunits)
+                return source, model, R
+
             else:
-                output.x *= u.nm.to(self.xunits)
-            return output
+                source, model = self.GenerateModel(fitpars, separate_source=True, return_resolution=return_resolution)
+                source.x *= u.nm.to(self.xunits)
+                model.x *= u.nm.to(self.xunits)
+                return source, model
+                
+        else:
+            if return_resolution:
+                model, R = self.GenerateModel(fitpars, return_resolution=return_resolution)
+                model.x *= u.nm.to(self.xunits)
+                return model, R
+            else:
+                model = self.GenerateModel(fitpars, return_resolution=return_resolution)
+                model.x *= u.nm.to(self.xunits)
+                return model
+            
 
 
         ### -----------------------------------------------
@@ -692,8 +727,11 @@ class TelluricFitter:
         if separate_source or self.fit_source:
             print "Generating Primary star model"
             primary_star = data.copy()
-            primary_star.y = FittingUtilities.Iterative_SV(resid / data.cont, 61, 4, lowreject=2, highreject=3, numiters=5)
+            primary_star.y = resid
+            primary_star = self.source_fcn(primary_star, *self.source_args, **self.source_kwargs)
             data.cont *= primary_star.y
+
+
 
         if self.debug and self.debug_level >= 4:
             print "Saving data and model arrays right before fitting the wavelength"
@@ -1425,3 +1463,13 @@ class TelluricFitter:
             # The broadening function never hits zero!
             return len(l)
         return np.where(signdiffs < 0.5)[0][0] + 1
+
+
+        
+def smoothing_source_fcn(data, *args, **kwargs):
+    """
+    Smooths the residuals after telluric division as an estimate of the star spectrum
+    """
+    star = data
+    star.y = FittingUtilities.Iterative_SV(star.y / star.cont, *args, **kwargs)
+    return star
