@@ -157,6 +157,9 @@ class TelluricFitter:
         for par in vardict.keys():
             try:
                 idx = self.parnames.index(par)
+                if par in ['wavestart', 'waveend'] and isinstance(vardict[par], u.quantities.Quantity):
+                    # Convert to nanometers
+                    vardict[par] = vardict[par].to(u.nm).value
                 self.const_pars[idx] = vardict[par]
                 self.fitting[idx] = True
             except ValueError:
@@ -187,6 +190,9 @@ class TelluricFitter:
         for par in vardict.keys():
             try:
                 idx = self.parnames.index(par)
+                if par in ['wavestart', 'waveend'] and isinstance(vardict[par], u.quantities.Quantity):
+                    # Convert to nanometers
+                    vardict[par] = vardict[par].to(u.nm).value
                 self.const_pars[idx] = vardict[par]
                 self.fitting[idx] = False
             except ValueError:
@@ -239,6 +245,10 @@ class TelluricFitter:
                 bounddict[par][1] = np.inf
             try:
                 idx = self.parnames.index(par)
+                if par in ['wavestart', 'waveend'] and isinstance(bounddict[par], u.quantities.Quantity):
+                    # Convert to nanometers
+                    bounddict[par][0] = bounddict[par][0].to(u.nm).value
+                    bounddict[par][1] = bounddict[par][1].to(u.nm).value
                 self.bounds[idx] = bounddict[par]
                 if par == "resolution":
                     self.resolution_bounds = bounddict[par]
@@ -506,7 +516,8 @@ class TelluricFitter:
             output = self.GenerateModel(fitpars, return_resolution=return_resolution)
             if return_resolution:
                 output[0].x *= u.nm.to(self.xunits)
-            else output.x *= u.nm.to(self.xunits)
+            else:
+                output.x *= u.nm.to(self.xunits)
             return output
 
 
