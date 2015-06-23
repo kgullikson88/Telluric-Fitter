@@ -15,6 +15,7 @@ Contents:
    Installation
    Tutorial
    API
+   Updating the atmosphere profile <GDAS_atmosphere>
 
 
 

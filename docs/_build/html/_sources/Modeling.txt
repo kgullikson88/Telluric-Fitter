@@ -13,4 +13,6 @@ Making a telluric model used to be hard. With TelFit, it is just a few lines of 
 
     # Make the model
     modeler = Modeler()
-    model = modeler.MakeModel(humidity=50.0, lowfreq=1e7/waveend, highfreq=1e7/wavestart)
+    model = modeler.MakeModel(humidity=50.0, 
+                              lowfreq=1e7/waveend, 
+                              highfreq=1e7/wavestart)
