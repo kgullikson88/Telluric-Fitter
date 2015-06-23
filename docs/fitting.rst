@@ -45,7 +45,7 @@ You can easily add your own observatory if you wish by editing the source code f
                         "wavestart": data.x[0] - 20.0,
                         "waveend": data.x[-1] + 20.0})
 
-You will notice that the input for both of the methods is a dictionary with parameter name and value. For the FitVariable method, the value is an initial guess. For the AdjustValue method, the value you give it is fixed (with the exception of detector resolution).Now let's set some bounds on the fitted parameters as well. You can set bounds on any parameter, but it will be ignored if it is a constant.
+You will notice that the input for both of the methods is a dictionary with parameter name and value. For the FitVariable method, the value is an initial guess. For the AdjustValue method, the value you give it is fixed (with the exception of detector resolution). Now let's set some bounds on the fitted parameters as well. You can set bounds on any parameter, but it will be ignored if it is a constant.
 
 .. code:: python
     
@@ -61,7 +61,7 @@ Finally, we can perform the fit. This will take quite some time to run, so go ge
 
     model = fitter.Fit(data=data)
 
-There are lots of options to Fit to control how it does everything. Check the API if the defaults aren't working for you. The data object you pass to Fit must be an object of type DataStructures.xypoint, which you can create with the following code (assuming you have your data in numpy arrays called 'wave', 'flux', and 'continuum')
+There are lots of options to Fit to control how it does everything. Check the API if the defaults aren't working for you. The data object you pass to Fit must be an object of type DataStructures.xypoint, which you can create with the following code (assuming you have your data in numpy arrays called 'wave', 'flux', and 'continuum'). In old versions of telfit, wave had to be in nanometers; now, it will accept any astropy units compatible with nanometers.
 
 .. code:: python
     
