@@ -13,3 +13,4 @@ examples/fit_example/chisq_summary.dat
 examples/fit_example_fullechelle/chisq_summary.dat
 .idea
 .idea/*
+docs/_build
