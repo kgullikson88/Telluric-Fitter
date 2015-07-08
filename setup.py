@@ -323,7 +323,7 @@ data_files.extend(example_files)
 
 
 setup(name='TelFit',
-      version='1.3.1',
+      version='1.3.2',
       author='Kevin Gullikson',
       author_email='kgulliks@astro.as.utexas.edu',
       url="http://www.as.utexas.edu/~kgulliks/projects.html",
