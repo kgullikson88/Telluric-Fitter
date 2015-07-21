@@ -193,7 +193,7 @@ def WriteTape5(pars, atmosphere=None, output="TAPE5"):
             abundances = atmosphere[zm][2]
             if len(abundances) != nmol:
                 sys.exit("Error! len(abundances) != nmol in atmosphere. Exiting")
-            outfile.write(writer("(3E10.4, 5x, 2A1, 1x, A1, 1x, A%i)" % min(39, nmol)).write(
+            outfile.write(writer("(3E10.3, 5x, 2A1, 1x, A1, 1x, A%i)" % min(39, nmol)).write(
                 (zm, pm, tm, jcharp, jchart, jlong, jchars)) + "\n")
 
             start = 0
