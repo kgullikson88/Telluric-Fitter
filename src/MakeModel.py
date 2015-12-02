@@ -22,6 +22,7 @@
 
 
 """
+from __future__ import print_function, division
 
 import sys
 import subprocess
@@ -35,6 +36,7 @@ import copy
 
 import scipy.interpolate
 import lockfile
+import logging
 import numpy as np
 from astropy import units
 
@@ -134,7 +136,7 @@ class Modeler:
 
         #Read in MIPAS atmosphere profile for upper atmosphere layers
         if debug:
-            print "Generating new atmosphere profile"
+            logging.info("Generating new atmosphere profile")
         filename = TelluricModelingDir + "MIPAS_atmosphere_profile"
         infile = open(filename)
         lines = infile.readlines()
@@ -222,16 +224,16 @@ class Modeler:
                 if MoleculeNumbers[n] == profilename:
                     molnum = n - 1
             if molnum < 0:
-                print "Error! Profilename given in Modeler.EditProfile is invalid!"
-                print "You gave: ", profilename
-                print "Valid options are: "
+                print("Error! Profilename given in Modeler.EditProfile is invalid!")
+                print("You gave: {}".format(profilename))
+                print("Valid options are: ")
                 for n in MoleculeNumbers:
-                    print MoleculeNumbers[n]
+                    print(MoleculeNumbers[n])
                 raise ValueError
         if profilenum < 0:
-            print "Error! Profilename given in Modeler.EditProfile is invalid!"
-            print "You gave: ", profilename
-            print "Valid options are either a molecule name, 'pressure', or 'temperature'"
+            print("Error! Profilename given in Modeler.EditProfile is invalid!")
+            print("You gave: {}".format(profilename))
+            print("Valid options are either a molecule name, 'pressure', or 'temperature'")
             raise ValueError
 
         #Okay, they gave a valid profile name. Lets grab some class variables
@@ -313,11 +315,10 @@ class Modeler:
                     found = True
                     break
             if not found:
-                print "Un-locked directory not found! Waiting 10 seconds..."
+                logging.warn("Un-locked directory not found! Waiting 10 seconds...")
                 time.sleep(10)
-        if self.debug:
-            print "Telluric Modeling Directory: %s" % TelluricModelingDir
-            print "Model Directory: %s" % ModelDir
+        logging.debug('Telluric Modeling Directory = {}'.format(TelluricModelingDir))
+        logging.debug('Mode Directory = {}'.format(ModelDir))
 
         self.TelluricModelingDir = TelluricModelingDir
         self.ModelDir = ModelDir
@@ -444,8 +445,8 @@ class Modeler:
                 try:
                     command = subprocess.check_call(cmd, shell=True)
                 except subprocess.CalledProcessError:
-                    print "Error: Command '%s' failed in directory %s" % (cmd, TelluricModelingDir)
-                    sys.exit()
+                    raise subprocess.CalledProcessError("Error: Command '{}' failed in directory {}".format(cmd, TelluricModelingDir))
+      
 
                 #Read in TAPE12, which is the output of LBLRTM
                 freq, transmission = self.ReadTAPE12(TelluricModelingDir, appendto=(freq, transmission))
@@ -460,8 +461,7 @@ class Modeler:
         try:
             command = subprocess.check_call(cmd, shell=True)
         except subprocess.CalledProcessError:
-            print "Error: Command '%s' failed in directory %s" % (cmd, TelluricModelingDir)
-            sys.exit()
+            raise subprocess.CalledProcessError("Error: Command '{}' failed in directory {}".format(cmd, TelluricModelingDir))
 
         #Read in TAPE12, which is the output of LBLRTM
         freq, transmission = self.ReadTAPE12(TelluricModelingDir, appendto=(freq, transmission))
@@ -480,8 +480,8 @@ class Modeler:
             #Output filename
             model_name = ModelDir + "transmission" + "-%.2f" % pressure + "-%.2f" % temperature + "-%.1f" % humidity + "-%.1f" % angle + "-%.2f" % (
             co2) + "-%.2f" % (o3 * 100) + "-%.2f" % ch4 + "-%.2f" % (co * 10)
-            print "All done! Output Transmission spectrum is located in the file below:"
-            print model_name
+            logging.info("All done! Output Transmission spectrum is located in the file below:\n\t\t{}".format(model_name))
+
             np.savetxt(model_name, np.transpose((wavelength[::-1], transmission[::-1])), fmt="%.8g")
             if libfile != None:
                 infile = open(libfile, "a")
@@ -518,8 +518,7 @@ class Modeler:
         v1 = pv1
         v2 = pv2
         dv = pdv
-        if debug:
-            print 'info: ', pv1, pv2, pdv, numpoints
+        logging.debug('Info: {}, {}, {}, {}'.format(pv1, pv2, pdv, numpoints))
         npts = numpoints
         spectrum = []
         while numpoints > 0:
@@ -543,8 +542,7 @@ class Modeler:
         spectrum = np.array(spectrum)
         if v.size < spectrum.size:
             v = np.r_[v, v2 + dv]
-        if debug:
-            print "v, spec size: ", v.size, spectrum.size
+        logging.debug("v, spec size: ", v.size, spectrum.size)
 
         if appendto != None and appendto[0].size > 0:
             old_v, old_spectrum = appendto[0], appendto[1]

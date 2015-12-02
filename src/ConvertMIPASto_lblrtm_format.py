@@ -18,6 +18,7 @@
     along with TelFit.  If not, see <http://opensource.org/licenses/MIT>.
 
 """
+from __future__ import print_function, division
 
 
 def Main(lines, jcharP="A", jcharT="A", jlong="L", jchar="", num_molecules=12):

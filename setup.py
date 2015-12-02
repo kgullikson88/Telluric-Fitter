@@ -169,11 +169,11 @@ def MakeTAPE3(directory):
 
     #Run LNFL to generate TAPE3
     lnfl_ex = [f for f in os.listdir(directory) if "lnfl" in f][0]
-    print "\nUsing LNFL to generate a linelist for use by LBLRTM"
-    print "  You may change the wavelength range at the top of "
-    print "  the setup.py script. Saving run information in"
-    print "        lnfl_run.log"
-    print "  This may take a while...\n"
+    print("\nUsing LNFL to generate a linelist for use by LBLRTM")
+    print("  You may change the wavelength range at the top of ")
+    print("  the setup.py script. Saving run information in")
+    print("        lnfl_run.log")
+    print("  This may take a while...\n")
     subprocess.check_call([u"./{0:s}".format(lnfl_ex)], stdout=open("lnfl_run.log", "w"),
                           stderr=subprocess.STDOUT, cwd=directory)
 
@@ -209,11 +209,11 @@ def MakeLBLRTM():
     #Unpack the tar files
     for fname in ['aer_v_3.2.tar.gz', 'aerlnfl_v2.6.tar.gz', 'aerlbl_v12.2.tar.gz']:
         if fname in os.listdir(TELLURICMODELING):
-            print "Un-packing %s" % fname
+            print("Un-packing {}".format(fname))
             subprocess.check_call(["tar", "-xzf", '{}{}'.format(TELLURICMODELING, fname), '-C', TELLURICMODELING])
         else:
-            print "\n\n*****    Error!   *****"
-            print "     {0:s} not found in current directory!\n\n".format(fname)
+            print("\n\n*****    Error!   *****")
+            print("     {0:s} not found in current directory!\n\n".format(fname))
             sys.exit()
 
 
@@ -251,25 +251,6 @@ def MakeLBLRTM():
 
         #Make sure the permissions are correct:
         subprocess.check_call(["chmod", "-R", "777", u"{0:s}/".format(directory)])
-
-
-    #Finally, we need to set the environment variable TELLURICMODELING.
-    """
-    line = "export TELLURICMODELING=%s/\n" % os.getcwd()
-    print "\nLBLRTM is all set up! The TelluricFitter code requires an environment variable to know where the lblrtm run directories are. You can set the appropriate environment variable with the following command:"
-    print "\n\t%s" % line
-    inp = raw_input(
-        "\nWould you like us to run this command, and append it to your bash profile (~/.bashrc), so that the environment variable will be set every time you open a new terminal? Note: if you ran setup.py as super-user, you should choose no and do it yourself! [Y/n] ")
-    if "y" in inp.lower() or inp.strip() == "":
-        infile = open("%s/.bashrc" % (os.environ["HOME"]), "a+r")
-        lines = infile.readlines()
-        if line in lines:
-            print "The appropriate environment variable is already set!"
-        else:
-            infile.write(line)
-        infile.close()
-        subprocess.check_call(line, shell=True)
-    """
 
     return
 

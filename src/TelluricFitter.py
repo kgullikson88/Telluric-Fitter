@@ -45,12 +45,14 @@ Usage:
 
 
 """
+from __future__ import print_function, division
 
 import sys
 import os
 from functools import partial
 import FittingUtilities
 import warnings
+import logging
 
 import numpy as np
 from numpy.polynomial import chebyshev
@@ -117,6 +119,11 @@ class TelluricFitter:
         outfile = open("chisq_summary.dat", "w")
         outfile.close()
 
+        # Set up the logger
+        if debug:
+            logger = logging.getLogger()
+            logger.setLevel(logging.DEBUG)
+
 
     # ## -----------------------------------------------
 
@@ -130,16 +137,16 @@ class TelluricFitter:
 
         :return: None
         """
-        print "%.15s\tValue\t\tFitting?\tBounds" % ("Parameter".ljust(15))
-        print "-------------\t-----\t\t-----\t\t-----"
+        print("%.15s\tValue\t\tFitting?\tBounds" % ("Parameter".ljust(15)))
+        print("-------------\t-----\t\t-----\t\t-----")
         for i in range(len(self.parnames)):
             if (fitonly and self.fitting[i]) or not fitonly:
                 if len(self.bounds[i]) == 2:
-                    print "%.15s\t%.5E\t%s\t\t%g - %g" % (
+                    print("%.15s\t%.5E\t%s\t\t%g - %g" % (
                     self.parnames[i].ljust(15), self.const_pars[i], self.fitting[i], self.bounds[i][0],
-                    self.bounds[i][1])
+                    self.bounds[i][1]))
                 else:
-                    print "%.15s\t%.5g\t\t%s" % (self.parnames[i].ljust(15), self.const_pars[i], self.fitting[i])
+                    print("%.15s\t%.5g\t\t%s" % (self.parnames[i].ljust(15), self.const_pars[i], self.fitting[i]))
 
 
 
@@ -166,7 +173,7 @@ class TelluricFitter:
                 self.const_pars[idx] = vardict[par]
                 self.fitting[idx] = True
             except ValueError:
-                print "Error! Bad parameter name given. Currently available are: "
+                print("Error! Bad parameter name given. Currently available are: ")
                 self.DisplayVariables()
                 raise ValueError
 
@@ -199,7 +206,7 @@ class TelluricFitter:
                 self.const_pars[idx] = vardict[par]
                 self.fitting[idx] = False
             except ValueError:
-                print "Error! Bad parameter name given. Currently available are: "
+                print("Error! Bad parameter name given. Currently available are: ")
                 self.DisplayVariables()
                 raise ValueError
 
@@ -216,8 +223,8 @@ class TelluricFitter:
             idx = self.parnames.index(variable)
             return self.const_pars[idx]
         else:
-            print "Error! Bad parameter name given (%s)." % (variable)
-            print "Currently available parameter names are: "
+            print ("Error! Bad parameter name given (%s)." % (variable))
+            print ("Currently available parameter names are: ")
             self.DisplayVariables()
 
 
@@ -256,7 +263,7 @@ class TelluricFitter:
                 if par == "resolution":
                     self.resolution_bounds = bounddict[par]
             except ValueError:
-                print "Error! Bad parameter name given. Currently available are: "
+                print("Error! Bad parameter name given. Currently available are: ")
                 self.DisplayVariables()
                 raise ValueError
 
@@ -290,8 +297,8 @@ class TelluricFitter:
             if "latitude" in observatory.keys() and "altitude" in observatory.keys():
                 self.observatory = observatory
             else:
-                print "Error! Wrong keys in observatory dictionary! Keys must be"
-                print "'latitude' and 'altitude'. Yours are: ", observatory.keys()
+                print("Error! Wrong keys in observatory dictionary! Keys must be")
+                print("'latitude' and 'altitude'. Yours are: ", observatory.keys())
                 raise KeyError
         else:
             raise ValueError("Error! Unrecognized input to TelluricFitter.SetObservatory()")
@@ -466,7 +473,7 @@ class TelluricFitter:
         #Make sure resolution bounds are given (resolution is always fit)
         idx = self.parnames.index("resolution")
         if len(self.bounds[idx]) < 2 and self.resolution_fit_mode != "SVD":
-            print "Must give resolution bounds!"
+            print("Must give resolution bounds!")
             inp = raw_input("Enter the lowest and highest possible resolution, separated by a space: ")
             self.resolution_bounds = [float(inp.split()[0]), float(inp.split()[1])]
 
@@ -478,7 +485,7 @@ class TelluricFitter:
                 fitpars.append(const_par)
                 self.normalization[i] = const_par
         if len(fitpars) < 1:
-            print "\n\nError! Must fit at least one variable!\n\n"
+            print("\n\nError! Must fit at least one variable!\n\n")
             return
 
         #Transform fitpars to the bounded equivalents
@@ -514,13 +521,9 @@ class TelluricFitter:
         bfgs_optdict = {'disp': 2, 'pgtol': 1e-8, 'epsilon': 1, 'approx_grad': True}
         slsqp_optdict = {'disp': 2, 'eps': 1e-1}
         output = leastsq(self.FitErrorFunction, fitpars, full_output=True, epsfcn=1e-1)
-        #fitpars, success = leastsq(self.FitErrorFunction, fitpars, diag=1.0 / np.array(fitpars), epsfcn=0.001)
-        #output = minimize(errfcn, fitpars, method="SLSQP", options=slsqp_optdict, bounds=bounds)
-        #fitpars = output.x
-        #print "Message: ", output.message
 
         fitpars = output[0]
-        print "Message: ", output[3]
+        logging.debug("Fit Message: {}".format(output[3]))
 
         #Save the best-fit values
         idx = 0
@@ -582,7 +585,7 @@ class TelluricFitter:
                 tmp2 = np.logical_or(self.data.x < x0, self.data.x > x1)
                 good = np.where(np.logical_and(tmp1, tmp2))[0]
 
-        print "Fraction of points used in X^2 evaluation: ", float(good.size)/float(self.data.size())
+        logging.info("Fraction of points used in X^2 evaluation: {}".format(float(good.size)/float(self.data.size())))
         return_array = (self.data.y - self.data.cont * model.y)[good] * weights[good]
         #Evaluate bound conditions and output the parameter value to the logfile.
         fit_idx = 0
@@ -596,7 +599,7 @@ class TelluricFitter:
         outfile.write("%g\n" % (np.sum(return_array**2) / float(weights.size)))
 
         self.chisq_vals.append(np.sum(return_array**2) / float(weights.size))
-        print "X^2 = ", np.sum(return_array**2) / float(weights.size)
+        logging.info("X^2 = {}".format(np.sum(return_array**2) / float(weights.size)))
         outfile.close()
 
         return return_array
@@ -700,8 +703,7 @@ class TelluricFitter:
 
         #Shift the data (or model) by a constant offset. This gets the wavelength calibration close
         shift = FittingUtilities.CCImprove(data, model, tol=0.1)
-        if self.debug:
-            print "Shifting model by {:.5g} pixels".format((shift))
+        logging.debug("Shifting model by {:.5g} pixels".format((shift)))
         if self.adjust_wave == "data" and shift != 0:
             data.x += shift
         elif self.adjust_wave == "model" and shift != 0:
@@ -725,7 +727,7 @@ class TelluricFitter:
                                                highreject=3)
 
         if separate_source or self.fit_source:
-            print "Generating Primary star model"
+            logging.info("Generating Primary star model")
             primary_star = data.copy()
             primary_star.y = resid
             primary_star = self.source_fcn(primary_star, *self.source_args, **self.source_kwargs)
@@ -734,8 +736,8 @@ class TelluricFitter:
 
 
         if self.debug and self.debug_level >= 4:
-            print "Saving data and model arrays right before fitting the wavelength"
-            print "  and resolution to Debug_Output1.log"
+            logging.debug("Saving data and model arrays right before fitting the wavelength")
+            logging.debug("  and resolution to Debug_Output1.log")
             np.savetxt("Debug_Output1.log", np.transpose((data.x, data.y, data.cont, model.x, model.y)))
 
 
@@ -746,28 +748,28 @@ class TelluricFitter:
             test = data.x + modelfcn(data.x - mean)
             xdiff = [test[j] - test[j - 1] for j in range(1, len(test) - 1)]
             if min(xdiff) > 0 and np.max(np.abs(test - data.x)) < 0.1 and min(test) > 0:
-                print "Adjusting data wavelengths by at most %.8g nm" % np.max(test - model.x)
+                logging.info("Adjusting data wavelengths by at most %.8g nm" % np.max(test - model.x))
                 data.x = test.copy()
             else:
-                print "Warning! Wavelength calibration did not succeed!"
+                logging.warn("Wavelength calibration did not succeed!")
         elif self.adjust_wave == "model":
             test = model_original.x - modelfcn(model_original.x - mean)
             test2 = model.x - modelfcn(model.x - mean)
             xdiff = [test[j] - test[j - 1] for j in range(1, len(test) - 1)]
             if min(xdiff) > 0 and np.max(np.abs(test2 - model.x)) < 0.1 and min(test) > 0 and abs(
                             test[0] - data.x[0]) < 50 and abs(test[-1] - data.x[-1]) < 50:
-                print "Adjusting wavelength calibration by at most %.8g nm" % max(test2 - model.x)
+                logging.info("Adjusting wavelength calibration by at most %.8g nm" % max(test2 - model.x))
                 model_original.x = test.copy()
                 model.x = test2.copy()
             else:
-                print "Warning! Wavelength calibration did not succeed!"
+                logging.warn("Wavelength calibration did not succeed!")
 
         else:
             sys.exit("Error! adjust_wave set to an invalid value: %s" % self.adjust_wave)
 
         if self.debug and self.debug_level >= 4:
-            print "Saving data and model arrays after fitting the wavelength"
-            print "  and before the resolution fit to Debug_Output2.log"
+            logging.debug("Saving data and model arrays after fitting the wavelength")
+            logging.debug("  and before the resolution fit to Debug_Output2.log")
             np.savetxt("Debug_Output2.log", np.transpose((data.x, data.y, data.cont, model.x, model.y)))
 
 
@@ -781,7 +783,7 @@ class TelluricFitter:
                 model, self.broadstuff = self.Broaden2(data.copy(), model_original.copy(), full_output=True)
             else:
                 done = False
-                print "Resolution fit mode set to an invalid value: %s" % self.resolution_fit_mode
+                print("Resolution fit mode set to an invalid value: %s" % self.resolution_fit_mode)
                 self.resolution_fit_mode = raw_input("Enter a valid mode (SVD or guass): ")
 
         self.data = data
@@ -880,8 +882,7 @@ class TelluricFitter:
           be very close for this algorithm to succeed! NOT MEANT TO BE CALLED
           DIRECTLY BY THE USER!
         """
-        if self.debug:
-            print "Fitting Wavelength"
+        logging.debug("Fitting Wavelength")
         old = []
         new = []
         #Find lines in the telluric model
@@ -894,7 +895,7 @@ class TelluricFitter:
 
         if self.debug and self.debug_level >= 5:
             logfilename = "FitWavelength.log"
-            print "Outputting data and telluric model to %s" % logfilename
+            logging.debug("Outputting data and telluric model to %s" % logfilename)
             np.savetxt(logfilename,
                        np.transpose((data_original.x, data_original.y, data_original.cont, data_original.err)),
                        fmt="%.8f")
@@ -961,7 +962,7 @@ class TelluricFitter:
             plt.ylabel("New Wavelength")
 
         numlines = len(model_lines)
-        print "Found %i lines in this order" % numlines
+        logging.info("Found %i lines in this order" % numlines)
         fit = lambda x: 0
         mean = 0.0
         if numlines < fitorder:
@@ -1090,7 +1091,7 @@ class TelluricFitter:
         called by GenerateModel, and is not meant to be called by the user!
         """
 
-        print "Fitting Resolution"
+        logging.info("Fitting Resolution")
 
         #Subsample the model to speed this part up (it doesn't affect the accuracy much)
         dx = (data.x[1] - data.x[0]) / 3.0
@@ -1105,10 +1106,10 @@ class TelluricFitter:
             resolution = fminbound(ResolutionFitErrorBrute, self.resolution_bounds[0], self.resolution_bounds[1], xtol=1,
                                    args=(data, newmodel))
         except ValueError:
-            print "ValueError encountered while fitting the detector resolution. Falling back to guess resolution!"
+            print("ValueError encountered while fitting the detector resolution. Falling back to guess resolution!")
 
 
-        print "Optimal resolution found at R = ", float(resolution)
+        logging.info("Optimal resolution found at R = {}".format(float(resolution)))
         newmodel = FittingUtilities.ReduceResolution(newmodel, float(resolution))
         return FittingUtilities.RebinData(newmodel, data.x), float(resolution)
 
@@ -1123,8 +1124,8 @@ class TelluricFitter:
         """
         resolution = max(1000.0, float(int(float(resolution) + 0.5)))
         if self.debug and self.debug_level >= 5:
-            print "Saving inputs for R = ", resolution
-            print " to Debug_ResFit.log and Debug_ResFit2.log"
+            logging.debug("Saving inputs for R = {}".format(resolution))
+            logging.debug(" to Debug_ResFit.log and Debug_ResFit2.log")
             np.savetxt("Debug_ResFit.log", np.transpose((data.x, data.y, data.cont)))
             np.savetxt("Debug_Resfit2.log", np.transpose((model.x, model.y)))
         newmodel = FittingUtilities.ReduceResolution(model, resolution, extend=False)
@@ -1143,10 +1144,9 @@ class TelluricFitter:
         weights = 1.0 / data.err ** 2
         returnvec = (data.y - data.cont * newmodel.y)[good] ** 2 * weights[good] + FittingUtilities.bound(
             self.resolution_bounds, resolution)
-        if self.debug:
-            print "Resolution-fitting X^2 = ", np.sum(returnvec) / float(good.size), "at R = ", resolution
+        logging.debug("Resolution-fitting X^2 = {} at R = {}".format(np.sum(returnvec) / float(good.size), resolution))
         if np.isnan(np.sum(returnvec ** 2)):
-            print "Error! NaN found in ResolutionFitError!"
+            print("Error! NaN found in ResolutionFitError!")
             outfile = open("ResolutionFitError.log", "a")
             outfile.write("#Error attempting R = %g\n" % (resolution))
             np.savetxt(outfile, np.transpose((data.x, data.y, data.cont, newmodel.x, newmodel.y)), fmt="%.10g")
@@ -1288,7 +1288,7 @@ class TelluricFitter:
         #idx = self.parnames.index("resolution")
         #self.const_pars[idx] = resolution
 
-        print "Approximate resolution = %g" % resolution
+        logging.info("Approximate resolution = %g" % resolution)
 
         #x2 = np.arange(Broadening.size)
 
@@ -1441,7 +1441,7 @@ class TelluricFitter:
         #idx = self.parnames.index("resolution")
         #self.const_pars[idx] = resolution
 
-        print "Approximate resolution = %g" % resolution
+        logging.info("Approximate resolution = %g" % resolution)
 
         #x2 = np.arange(Broadening.size)
 

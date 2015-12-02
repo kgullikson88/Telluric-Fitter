@@ -15,6 +15,7 @@
     along with TelFit.  If not, see <http://opensource.org/licenses/MIT>.
 
 """
+from __future__ import print_function, division
 
 import numpy as np
 from astropy import units as u
@@ -175,7 +176,6 @@ def CombineXYpoints(xypts, snr=None, xspacing=None, numpoints=None, interp_order
             xspacing = avg_spacing
         numpoints = (last - first) / xspacing
     x = np.linspace(first, last, numpoints)
-    # print(x)
 
     full_array = xypoint(x=x, y=np.zeros(x.size))
     numvals = np.zeros(x.size, dtype=np.float)  #The number of arrays each x point is in
@@ -188,14 +188,6 @@ def CombineXYpoints(xypts, snr=None, xspacing=None, numpoints=None, interp_order
             right += 1
         numvals[left:right] += 1.0
         full_array.y[left:right] += interpolator(full_array.x[left:right])
-        # print(interpolator(full_array.x[left:right]))
-        #print(full_array.x[left:right])
-        #print(xypt.x)
-        #print '\n'
-
-    # import pylab
-    #pylab.plot(full_array.x, numvals)
-    print np.unique(numvals)
     full_array.y[numvals > 0] /= numvals[numvals > 0]
     return full_array
   
