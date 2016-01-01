@@ -1195,8 +1195,8 @@ class TelluricFitter:
         #Make 'design matrix'
         design = np.zeros((n - m, m))
         for j in range(m):
-            for i in range(m / 2, n - m / 2 - 1):
-                design[i - m / 2, j] = model_new[i - j + m / 2]
+            for i in range(m // 2, n - m // 2 - 1):
+                design[i - m // 2, j] = model_new[i - j + m // 2]
         design = mat(design)
 
         #Do Singular Value Decomposition
@@ -1331,8 +1331,8 @@ class TelluricFitter:
         #Make 'design matrix'
         design = np.zeros((n - m, m))
         for j in range(m):
-            for i in range(m / 2, n - m / 2 - 1):
-                design[i - m / 2, j] = model_new[i - j + m / 2]
+            for i in range(m // 2, n - m // 2 - 1):
+                design[i - m // 2, j] = model_new[i - j + m // 2]
         design = mat(design)
 
         #Do Singular Value Decomposition
@@ -1360,7 +1360,7 @@ class TelluricFitter:
         W2 = diagsvd(W1, m, m)
 
         #Solve for the broadening function
-        spec = np.transpose(mat(ynew[m / 2:n - m / 2 - 1]))
+        spec = np.transpose(mat(ynew[m // 2:n - m // 2 - 1]))
         temp = np.dot(U_t, spec)
         temp = np.dot(W2, temp)
         Broadening = np.dot(V, temp)
@@ -1392,7 +1392,7 @@ class TelluricFitter:
         #Ensure that the broadening function is appropriate:
         maxindex = Broadening.argmax()
         badfit = False
-        if maxindex > m / 2.0 + m / 10.0 or maxindex < m / 2.0 - m / 10.0:
+        if maxindex > m / 2 + m / 10 or maxindex < m / 2 - m / 10:
             #The maximum should be in the middle because we already did wavelength calibration!
             outfilename = "SVD_Error2.log"
             np.savetxt(outfilename, np.transpose((Broadening, )))
@@ -1401,7 +1401,7 @@ class TelluricFitter:
             badfit = True
 
 
-        elif Broadening[maxindex] < 3 * np.mean(Broadening[maxindex + int(m / 5.0):]):
+        elif Broadening[maxindex] < 3 * np.mean(Broadening[maxindex + int(m / 5):]):
             outfilename = "SVD_Error2.log"
             np.savetxt(outfilename, np.transpose((Broadening, )))
             warnings.warn("Warning! SVD Broadening function is not strongly peaked! "
