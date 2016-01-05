@@ -542,7 +542,7 @@ class Modeler:
         spectrum = np.array(spectrum)
         if v.size < spectrum.size:
             v = np.r_[v, v2 + dv]
-        logging.debug("v, spec size: ", v.size, spectrum.size)
+        logging.debug("v, spec size: {}, {} ", (v.size, spectrum.size))
 
         if appendto != None and appendto[0].size > 0:
             old_v, old_spectrum = appendto[0], appendto[1]
