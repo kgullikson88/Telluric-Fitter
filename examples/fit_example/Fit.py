@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
     #Read in the spectrum and store as an xypoint
     x, y, c, e = numpy.loadtxt("Spectrum.dat", unpack=True)
-    data = DataStructures.xypoint(x=x*u.angstrom, y=y, cont=c, err=e)
+    data = DataStructures.xypoint(x=x*u.nanometer, y=y, cont=c, err=e)
 
 
     #The following are parameters that should be in the fits header for an observation
