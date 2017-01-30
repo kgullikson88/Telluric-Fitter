@@ -66,6 +66,7 @@ TELLURICMODELING = '{}/.TelFit/'.format(os.environ['HOME'])
 
 # URL where the data is stored
 DATA_URL = 'http://www.as.utexas.edu/~kgulliks/media/data/aerlbl_v12.2_package.tar.gz'
+DATA_URL = 'https://zenodo.org/record/13487/files/'
 
 if not TELLURICMODELING.endswith('/'):
     TELLURICMODELING += '/'
@@ -198,35 +199,25 @@ def MakeLBLRTM():
         to the user's ~/.bashrc
     """
 
-    # Get the data files from directory
     ensure_dir(TELLURICMODELING)
-    outfile = '{}aerlbl_package.tar.gz'.format(TELLURICMODELING)
-    if not os.path.exists(outfile):
-        print('Downloading data from {} and putting it in directory {}'.format(DATA_URL, TELLURICMODELING))
-        download_file(DATA_URL, outfile)
-        subprocess.check_call(['tar', '-xzf', outfile, '-C', TELLURICMODELING])
 
-    #Unpack the tar files
+    #Get/Unpack the tar files
     for fname in ['aer_v_3.2.tar.gz', 'aerlnfl_v2.6.tar.gz', 'aerlbl_v12.2.tar.gz']:
-        if fname in os.listdir(TELLURICMODELING):
-            print("Un-packing {}".format(fname))
-            subprocess.check_call(["tar", "-xzf", '{}{}'.format(TELLURICMODELING, fname), '-C', TELLURICMODELING])
-        else:
-            print("\n\n*****    Error!   *****")
-            print("     {0:s} not found in current directory!\n\n".format(fname))
-            sys.exit()
-
+        if fname not in os.listdir(TELLURICMODELING):
+            url = '{}{}'.format(DATA_URL, fname)
+            print('Downloading data from {} and putting it in directory {}'.format(url, TELLURICMODELING))
+            download_file(url, '{}{}'.format(TELLURICMODELING, fname))
+        print("Un-packing {}".format(fname))
+        subprocess.check_call(["tar", "-xzf", '{}{}'.format(TELLURICMODELING, fname), '-C', TELLURICMODELING])
 
     #Build the executables
     make_str = GetCompilerString()
     subprocess.check_call(["make", "-f", "make_lnfl", make_str], cwd="{}lnfl/build".format(TELLURICMODELING))
     subprocess.check_call(["make", "-f", "make_lblrtm", make_str], cwd="{}lblrtm/build".format(TELLURICMODELING))
 
-
     #Generate a TAPE3, if necessary.
     if "TAPE3" not in os.listdir("{}lnfl".format(TELLURICMODELING)):
         MakeTAPE3("{}lnfl/".format(TELLURICMODELING))
-
 
     #Make run directories with all of the relevant files/scripts/etc.
     # THIS MAY NOT WORK IF PIP DOESN'T HAVE DATA WHERE I THINK IT WILL BE!
@@ -304,7 +295,7 @@ data_files.extend(example_files)
 
 
 setup(name='TelFit',
-      version='1.3.2',
+      version='1.3.3',
       author='Kevin Gullikson',
       author_email='kgulliks@astro.as.utexas.edu',
       url="http://www.as.utexas.edu/~kgulliks/projects.html",
