@@ -11,7 +11,7 @@ Usage:
       the initial guess value for that variable.
       Example: fitter.FitVariable({"ch4": 1.6, "h2o": 45.0})
   - Edit values of constant parameters: similar to FitVariable,
-      but the variables given here will not be fit. Useful for 
+      but the variables given here will not be fit. Useful for
       settings things like the telescope pointing angle, temperature,
       and pressure, which will be very well-known.
       Example: fitter.AdjustValue({"angle": 50.6})
@@ -21,15 +21,15 @@ Usage:
   - Import data (fitter.ImportData): Copy data as a class variable.
       Must be given as a DataStructures.xypoint instance
   - Perform the fit: (fitter.Fit):
-      Returns a DataStructures.xypoint instance of the model. The 
+      Returns a DataStructures.xypoint instance of the model. The
       x-values in the returned array are the same as the data.
-   - Optional: retrieve a new version of the data, which is 
+   - Optional: retrieve a new version of the data, which is
       wavelength-calibrated using the telluric lines and with
       a potentially better continuum fit using
-      data2 = fitter.data  
+      data2 = fitter.data
 
 
-      
+
 
     This file is part of the TelFit program.
 
@@ -420,15 +420,15 @@ class TelluricFitter:
                                      that the 'adjust_wave' input will determine whether the data or the
                                      telluric model is wavelength-adjusted.
         :param air_wave:  Are the wavelengths in air wavelengths? Default is True.
-        :param fit_source:  determines whether an attempt to fit the source spectrum (the spectrum of the 
-                            object you are fitting, not the telluric lines) is made. If true, this function 
+        :param fit_source:  determines whether an attempt to fit the source spectrum (the spectrum of the
+                            object you are fitting, not the telluric lines) is made. If true, this function
                             returns both the best-fit model and the source estimate. By default, it fits
                             the source spectrum with a simple smoothing kernel that works well for rapidly
                             rotating stars. However, you can give a custom source fitting function with the
                             'source_fcn' keyword.
-        :param source_fcn:  A function that takes a DataStructures.xypoint instance and any number of 
+        :param source_fcn:  A function that takes a DataStructures.xypoint instance and any number of
                             arguments/keyword arguments after it. This function should expect a spectrum of
-                            the source (without telluric lines) and attempt to fit it. 
+                            the source (without telluric lines) and attempt to fit it.
                             Warning: This function will be called in every iteration, so do not use a function
                             that takes more than ~1 second, or the telluric fit will slow down considerably!
         :param source_args: A list of arguments to give to the source function.
@@ -462,7 +462,7 @@ class TelluricFitter:
         if source_fcn is not None:
             self.source_fcn = source_fcn
             self.fit_source = True
-            
+
         if self.fit_source:
             if source_args is not None:
                 self.source_args = source_args
@@ -546,7 +546,7 @@ class TelluricFitter:
                 source.x *= u.nm.to(self.xunits)
                 model.x *= u.nm.to(self.xunits)
                 return source, model
-                
+
         else:
             if return_resolution:
                 model, R = self.GenerateModel(fitpars, return_resolution=return_resolution)
@@ -556,7 +556,7 @@ class TelluricFitter:
                 model = self.GenerateModel(fitpars, return_resolution=return_resolution)
                 model.x *= u.nm.to(self.xunits)
                 return model
-            
+
 
 
         ### -----------------------------------------------
@@ -654,10 +654,10 @@ class TelluricFitter:
         #Extract parameters from pars and const_pars. They will have variable
         #  names set from self.parnames
         fit_idx = 0
+        global resolution
         for i in range(len(self.parnames)):
             #Assign to local variables by the parameter name
-            exec ("%s = %g" % (self.parnames[i], self.const_pars[i]))
-
+            globals()[self.parnames[i]] = self.const_pars[i]
 
         wavenum_start = 1e7 / waveend
         wavenum_end = 1e7 / wavestart
@@ -1465,7 +1465,7 @@ class TelluricFitter:
         return np.where(signdiffs < 0.5)[0][0] + 1
 
 
-        
+
 def smoothing_source_fcn(data, *args, **kwargs):
     """
     Smooths the residuals after telluric division as an estimate of the star spectrum
