@@ -277,7 +277,7 @@ requires = ['matplotlib',
             'astropy>=0.2',
             'lockfile',
             'pysynphot>=0.7',
-            'fortranformat',
+            'fortranformat<1.0',
             'cython',
             'requests']
 
