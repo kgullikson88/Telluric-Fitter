@@ -626,7 +626,7 @@ class TelluricFitter:
                         Ignored if nofit=False
         :param model: A DataStructures.xypoint instance containing an un-broadened telluric model.
                       If given, it uses this instead of making one.
-        :param air_wave:  Are the wavelengths in air wavelengths? Default is True.
+        :param air_wave: Set True of False to overwrite the air_wave saved under self. Default is None.
         
         :return:  The best-fit telluric model, as a DataStructures.xypoint instance where the x-axis is
                  sampled the same as the data (so you should be able to directly divide the two). If
