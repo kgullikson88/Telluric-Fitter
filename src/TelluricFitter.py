@@ -68,13 +68,14 @@ import DataStructures
 
 
 class TelluricFitter:
-    def __init__(self, debug=False, debug_level=2):
+    def __init__(self, debug=False, debug_level=2, print_show=True):
         """
         Initialize the TelluricFitter class.
 
         :param debug: Flag to print a bunch of messages to screen for debugging purposes
         :param debug_level: An integer from 1-5 that controls how much gets printed. 1 is the least and 5 is the most.
-
+        :param print_show: Show printouts from fortran code
+        
         :return: An instance of TelluricFitter.
         """
         # Set up parameters
@@ -105,7 +106,7 @@ class TelluricFitter:
         self.wavelength_fit_order = 3
         self.debug = debug
         self.debug_level = debug_level  #Number from 1-5, with 5 being the most verbose
-        self.Modeler = MakeModel.Modeler(debug=self.debug)
+        self.Modeler = MakeModel.Modeler(debug=self.debug, printoutshow=print_show)
         self.parvals = [[] for i in range(len(self.parnames))]
         self.chisq_vals = []
         self.ignore = []
