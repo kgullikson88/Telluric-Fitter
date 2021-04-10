@@ -328,7 +328,7 @@ class Modeler:
     def MakeModel(self, pressure=795.0, temperature=283.0, lowfreq=4000, highfreq=4600, angle=45.0, humidity=50.0,
                   co2=368.5, o3=3.9e-2, n2o=0.32, co=0.14, ch4=1.8, o2=2.1e5, no=1.1e-19, so2=1e-4, no2=1e-4, nh3=1e-4,
                   hno3=5.6e-4, lat=30.6, alt=2.1, wavegrid=None, resolution=None, save=False, libfile=None,
-                  vac2air=True):
+                  vac2air=True, printoutshow=True):
         """
         Here is the important function! All of the variables have default values,
           which you will want to override for any realistic use.
@@ -364,6 +364,8 @@ class Modeler:
                                saved file will be written to this filename. Should be a string
                                variable. Ignored if save==False
         :param vac2air:        If True (default), it converts the wavelengths from vacuum to air
+        :param printoutshow:   Printing all fortran ourputs? Default is True.
+        
         :return:               DataStructures.xypoint instance with the telluric model. The x-axis
                                is in nanometers and the y-axis is in fractional transmission.
         """
@@ -443,7 +445,11 @@ class Modeler:
                 #Run lblrtm
                 cmd = "cd " + TelluricModelingDir + ";sh runlblrtm_v3.sh"
                 try:
-                    command = subprocess.check_call(cmd, shell=True)
+                    if printoutshow:
+                        command = subprocess.check_call(cmd, shell=True)
+                    if not printoutshow:
+                        command = subprocess.check_call(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
                 except subprocess.CalledProcessError:
                     raise subprocess.CalledProcessError("Error: Command '{}' failed in directory {}".format(cmd, TelluricModelingDir))
       
@@ -459,7 +465,11 @@ class Modeler:
         #Run lblrtm for the last time
         cmd = "cd " + TelluricModelingDir + ";sh runlblrtm_v3.sh"
         try:
-            command = subprocess.check_call(cmd, shell=True)
+            if printoutshow:
+                command = subprocess.check_call(cmd, shell=True)
+            if not printoutshow:
+                command = subprocess.check_call(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+  
         except subprocess.CalledProcessError:
             raise subprocess.CalledProcessError("Error: Command '{}' failed in directory {}".format(cmd, TelluricModelingDir))
 
