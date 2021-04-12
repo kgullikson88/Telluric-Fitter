@@ -103,7 +103,7 @@ class ModelerException(Exception):
 class Modeler:
     def __init__(self, debug=False,
                  TelluricModelingDirRoot=DEFAULT_TELLURICMODELING,
-                 nmolecules=12, printoutshow=True):
+                 nmolecules=12, print_lblrtm_output=True):
         """
         Initialize a modeler instance
 
@@ -119,7 +119,7 @@ class Modeler:
         Atmosphere = defaultdict(list)
         indices = {}
         self.debug = debug
-        self.printoutshow = printoutshow
+        self.print_lblrtm_output = print_lblrtm_output
         if not TelluricModelingDirRoot.endswith("/"):
             TelluricModelingDirRoot = TelluricModelingDirRoot + "/"
         if not 'rundir1' in os.listdir(TelluricModelingDirRoot):
@@ -446,9 +446,9 @@ class Modeler:
                 #Run lblrtm
                 cmd = "cd " + TelluricModelingDir + ";sh runlblrtm_v3.sh"
                 try:
-                    if self.printoutshow:
+                    if self.print_lblrtm_output:
                         command = subprocess.check_call(cmd, shell=True)
-                    if not self.printoutshow:
+                    if not self.print_lblrtm_output:
                         command = subprocess.check_call(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
                 except subprocess.CalledProcessError:
@@ -466,9 +466,9 @@ class Modeler:
         #Run lblrtm for the last time
         cmd = "cd " + TelluricModelingDir + ";sh runlblrtm_v3.sh"
         try:
-            if self.printoutshow:
+            if self.print_lblrtm_output:
                 command = subprocess.check_call(cmd, shell=True)
-            if not self.printoutshow:
+            if not self.print_lblrtm_output:
                 command = subprocess.check_call(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
   
         except subprocess.CalledProcessError:
