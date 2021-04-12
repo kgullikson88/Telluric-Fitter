@@ -103,7 +103,7 @@ class ModelerException(Exception):
 class Modeler:
     def __init__(self, debug=False,
                  TelluricModelingDirRoot=DEFAULT_TELLURICMODELING,
-                 nmolecules=12):
+                 nmolecules=12, print_lblrtm_output=True):
         """
         Initialize a modeler instance
 
@@ -112,12 +112,14 @@ class Modeler:
                                         installation puts this in ~/.TelFit/
         :param nmolecules: The number of molecules to include in the telluric model. Probably don't change
                            this, and definitely don't increase it!
+        :param printoutshow:  Printing all fortran ourputs? Default is True.
         :return: None
         """
 
         Atmosphere = defaultdict(list)
         indices = {}
         self.debug = debug
+        self.print_lblrtm_output = print_lblrtm_output
         if not TelluricModelingDirRoot.endswith("/"):
             TelluricModelingDirRoot = TelluricModelingDirRoot + "/"
         if not 'rundir1' in os.listdir(TelluricModelingDirRoot):
@@ -364,6 +366,7 @@ class Modeler:
                                saved file will be written to this filename. Should be a string
                                variable. Ignored if save==False
         :param vac2air:        If True (default), it converts the wavelengths from vacuum to air
+        
         :return:               DataStructures.xypoint instance with the telluric model. The x-axis
                                is in nanometers and the y-axis is in fractional transmission.
         """
@@ -443,7 +446,11 @@ class Modeler:
                 #Run lblrtm
                 cmd = "cd " + TelluricModelingDir + ";sh runlblrtm_v3.sh"
                 try:
-                    command = subprocess.check_call(cmd, shell=True)
+                    if self.print_lblrtm_output:
+                        command = subprocess.check_call(cmd, shell=True)
+                    if not self.print_lblrtm_output:
+                        command = subprocess.check_call(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
                 except subprocess.CalledProcessError:
                     raise subprocess.CalledProcessError("Error: Command '{}' failed in directory {}".format(cmd, TelluricModelingDir))
       
@@ -459,7 +466,11 @@ class Modeler:
         #Run lblrtm for the last time
         cmd = "cd " + TelluricModelingDir + ";sh runlblrtm_v3.sh"
         try:
-            command = subprocess.check_call(cmd, shell=True)
+            if self.print_lblrtm_output:
+                command = subprocess.check_call(cmd, shell=True)
+            if not self.print_lblrtm_output:
+                command = subprocess.check_call(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+  
         except subprocess.CalledProcessError:
             raise subprocess.CalledProcessError("Error: Command '{}' failed in directory {}".format(cmd, TelluricModelingDir))
 

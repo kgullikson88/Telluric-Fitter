@@ -68,13 +68,14 @@ import DataStructures
 
 
 class TelluricFitter:
-    def __init__(self, debug=False, debug_level=2):
+    def __init__(self, debug=False, debug_level=2, print_lblrtm_output=True):
         """
         Initialize the TelluricFitter class.
 
         :param debug: Flag to print a bunch of messages to screen for debugging purposes
         :param debug_level: An integer from 1-5 that controls how much gets printed. 1 is the least and 5 is the most.
-
+        :param print_lblrtm_output: Show printouts from fortran (lblrtm) code
+        
         :return: An instance of TelluricFitter.
         """
         # Set up parameters
@@ -105,7 +106,7 @@ class TelluricFitter:
         self.wavelength_fit_order = 3
         self.debug = debug
         self.debug_level = debug_level  #Number from 1-5, with 5 being the most verbose
-        self.Modeler = MakeModel.Modeler(debug=self.debug)
+        self.Modeler = MakeModel.Modeler(debug=self.debug, print_lblrtm_output=print_lblrtm_output)
         self.parvals = [[] for i in range(len(self.parnames))]
         self.chisq_vals = []
         self.ignore = []
@@ -609,7 +610,7 @@ class TelluricFitter:
 
 
 
-    def GenerateModel(self, pars, nofit=False, separate_source=False, return_resolution=False, broaden=False, model=None):
+    def GenerateModel(self, pars, nofit=False, separate_source=False, return_resolution=False, broaden=False, model=None, air_wave=None):
         """
         This function does the actual work of generating a model with the given parameters,
         fitting the continuum, making sure the model and data are well aligned in
@@ -626,7 +627,8 @@ class TelluricFitter:
                         Ignored if nofit=False
         :param model: A DataStructures.xypoint instance containing an un-broadened telluric model.
                       If given, it uses this instead of making one.
-
+        :param air_wave: Set True of False to overwrite the air_wave saved under self. Default is None, which will use the self.air_wave attribute
+        
         :return:  The best-fit telluric model, as a DataStructures.xypoint instance where the x-axis is
                  sampled the same as the data (so you should be able to directly divide the two). If
                  separate_source = True, this method also returns the estimate for the source spectrum *before*
@@ -663,13 +665,17 @@ class TelluricFitter:
         wavenum_end = 1e7 / wavestart
         lat = self.observatory["latitude"]
         alt = self.observatory["altitude"]
-
-
+        
+        # check if user overwrite MakeModel's output wavelength space
+        if air_wave is not None:
+            air_wave_overwrite = air_wave
+        else:
+            air_wave_overwrite = self.air_wave
         #Generate the model:
         if model is None:
             model = self.Modeler.MakeModel(pressure, temperature, wavenum_start, wavenum_end, angle, h2o, co2, o3, n2o, co,
                                            ch4, o2, no, so2, no2, nh3, hno3, lat=lat, alt=alt, wavegrid=None,
-                                           resolution=None, vac2air=self.air_wave)
+                                           resolution=None, vac2air=air_wave_overwrite)
 
             #Save each model if debugging
             if self.debug and self.debug_level >= 5:
