@@ -65,8 +65,7 @@ num_rundirs = 4
 TELLURICMODELING = '{}/.TelFit/'.format(os.environ['HOME'])
 
 # URL where the data is stored
-DATA_URL = 'http://www.as.utexas.edu/~kgulliks/media/data/aerlbl_v12.2_package.tar.gz'
-DATA_URL = 'https://zenodo.org/record/13487/files/'
+DATA_URL = 'https://zenodo.org/record/1202479/files/'
 
 if not TELLURICMODELING.endswith('/'):
     TELLURICMODELING += '/'
@@ -202,7 +201,7 @@ def MakeLBLRTM():
     ensure_dir(TELLURICMODELING)
 
     #Get/Unpack the tar files
-    for fname in ['aer_v_3.2.tar.gz', 'aerlnfl_v2.6.tar.gz', 'aerlbl_v12.2.tar.gz']:
+    for fname in ['aer_v_3.2.tar.gz', 'aerlnfl_v2.6.tar.gz', 'aerlbl_v12.2.1.tar.gz']:
         if fname not in os.listdir(TELLURICMODELING):
             url = '{}{}'.format(DATA_URL, fname)
             print('Downloading data from {} and putting it in directory {}'.format(url, TELLURICMODELING))
