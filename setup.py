@@ -57,7 +57,7 @@ waveend = 5000
 #The number of running directories for LBLRTM. We need more
 #  than one so that we can run multiple instances of 
 #  TelluricFitter at once without overwriting input files
-num_rundirs = 4
+num_rundirs = 2 * os.cpu_count() # two times the number of your cpu threads
 
 # Telluric modeling directory. This code will put all the data files in this directory.
 # NOTE: If you change this, you MUST make an environment variable call TELLURICMODELING that points
