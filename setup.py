@@ -57,7 +57,7 @@ waveend = 5000
 #The number of running directories for LBLRTM. We need more
 #  than one so that we can run multiple instances of 
 #  TelluricFitter at once without overwriting input files
-num_rundirs = 4
+num_rundirs = 2 * os.cpu_count() # two times the number of your cpu threads
 
 # Telluric modeling directory. This code will put all the data files in this directory.
 # NOTE: If you change this, you MUST make an environment variable call TELLURICMODELING that points
@@ -65,8 +65,7 @@ num_rundirs = 4
 TELLURICMODELING = '{}/.TelFit/'.format(os.environ['HOME'])
 
 # URL where the data is stored
-DATA_URL = 'http://www.as.utexas.edu/~kgulliks/media/data/aerlbl_v12.2_package.tar.gz'
-DATA_URL = 'https://zenodo.org/record/13487/files/'
+DATA_URL = 'https://zenodo.org/record/1202479/files/'
 
 if not TELLURICMODELING.endswith('/'):
     TELLURICMODELING += '/'
@@ -115,11 +114,11 @@ def GetCompilerString():
         raise OSError("Unrecognized operating system: %s" % p)
 
     #Next, find the fortran compiler to use
-    compilers = ["ifort",
-                 "gfortran",
+    compilers = ["gfortran",
+                 "ifort",
                  "g95"]
-    comp_strs = ["INTEL",
-                 "GNU",
+    comp_strs = ["GNU",
+                 "INTEL",
                  "G95"]
     found = False
     for i in range(len(compilers)):
@@ -138,7 +137,32 @@ def GetCompilerString():
     return output
 
 
+def gfortran_mode():
+    """
+    only for user with gfortran compiler
+    If gfortran version is later than v7.5.0, we need to add -std=legacy while compile the fortran code
+    """
 
+    # modify for lblrtm
+    a_file = open("{}lblrtm/build/makefile.common".format(TELLURICMODELING), "r")
+    list_of_lines = a_file.readlines()
+    list_of_lines[229] = '\tFCFLAG="-frecord-marker=4 -std=legacy" \\\n' # add -std=legacy
+    list_of_lines[342] = '\tFCFLAG="-frecord-marker=4 -std=legacy" \\\n' # add -std=legacy
+
+    a_file = open("{}lblrtm/build/makefile.common".format(TELLURICMODELING), "w")
+    a_file.writelines(list_of_lines)
+    a_file.close()
+
+    # modify for lnfl
+    a_file = open("{}lnfl/build/makefile.common".format(TELLURICMODELING), "r")
+    list_of_lines = a_file.readlines()
+    list_of_lines[214] = '\tFCFLAG="-frecord-marker=4 -std=legacy" \\\n' # add -std=legacy
+    list_of_lines[327] = '\tFCFLAG="-frecord-marker=4 -std=legacy" \\\n' # add -std=legacy
+
+    a_file = open("{}lnfl/build/makefile.common".format(TELLURICMODELING), "w")
+    a_file.writelines(list_of_lines)
+    a_file.close()
+    
 
 
 def MakeTAPE3(directory):
@@ -202,7 +226,7 @@ def MakeLBLRTM():
     ensure_dir(TELLURICMODELING)
 
     #Get/Unpack the tar files
-    for fname in ['aer_v_3.2.tar.gz', 'aerlnfl_v2.6.tar.gz', 'aerlbl_v12.2.tar.gz']:
+    for fname in ['aer_v_3.2.tar.gz', 'aerlnfl_v2.6.tar.gz', 'aerlbl_v12.2.1.tar.gz']:
         if fname not in os.listdir(TELLURICMODELING):
             url = '{}{}'.format(DATA_URL, fname)
             print('Downloading data from {} and putting it in directory {}'.format(url, TELLURICMODELING))
@@ -212,8 +236,14 @@ def MakeLBLRTM():
 
     #Build the executables
     make_str = GetCompilerString()
-    subprocess.check_call(["make", "-f", "make_lnfl", make_str], cwd="{}lnfl/build".format(TELLURICMODELING))
-    subprocess.check_call(["make", "-f", "make_lblrtm", make_str], cwd="{}lblrtm/build".format(TELLURICMODELING))
+    
+    try:
+        subprocess.check_call(["make", "-f", "make_lnfl", make_str], cwd="{}lnfl/build".format(TELLURICMODELING))
+        subprocess.check_call(["make", "-f", "make_lblrtm", make_str], cwd="{}lblrtm/build".format(TELLURICMODELING))
+    except:
+        gfortran_mode()
+        subprocess.check_call(["make", "-f", "make_lnfl", make_str], cwd="{}lnfl/build".format(TELLURICMODELING))
+        subprocess.check_call(["make", "-f", "make_lblrtm", make_str], cwd="{}lblrtm/build".format(TELLURICMODELING))
 
     #Generate a TAPE3, if necessary.
     if "TAPE3" not in os.listdir("{}lnfl".format(TELLURICMODELING)):
