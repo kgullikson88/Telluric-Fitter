@@ -55,7 +55,7 @@ waveend = 5000
 
 
 #The number of running directories for LBLRTM. We need more
-#  than one so that we can run multiple instances of 
+#  than one so that we can run multiple instances of
 #  TelluricFitter at once without overwriting input files
 num_rundirs = 2 * os.cpu_count() # two times the number of your cpu threads
 
@@ -162,7 +162,7 @@ def gfortran_mode():
     a_file = open("{}lnfl/build/makefile.common".format(TELLURICMODELING), "w")
     a_file.writelines(list_of_lines)
     a_file.close()
-    
+
 
 
 def MakeTAPE3(directory):
@@ -236,7 +236,7 @@ def MakeLBLRTM():
 
     #Build the executables
     make_str = GetCompilerString()
-    
+
     try:
         subprocess.check_call(["make", "-f", "make_lnfl", make_str], cwd="{}lnfl/build".format(TELLURICMODELING))
         subprocess.check_call(["make", "-f", "make_lblrtm", make_str], cwd="{}lblrtm/build".format(TELLURICMODELING))
@@ -325,10 +325,10 @@ data_files.extend(example_files)
 
 
 setup(name='TelFit',
-      version='1.3.3',
+      version='1.4.0',
       author='Kevin Gullikson',
       author_email='kgulliks@astro.as.utexas.edu',
-      url="http://www.as.utexas.edu/~kgulliks/projects.html",
+      url="https://telfit.readthedocs.io/",
       description='A package to fit the telluric absorption in astronomical spectra.',
       license='The MIT License: http://www.opensource.org/licenses/mit-license.php',
       classifiers = [
@@ -336,7 +336,7 @@ setup(name='TelFit',
         'Intended Audience :: Developers',
         'Operating System :: OS Independent',
         'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 2.7',],
+        'Programming Language :: Python :: 3.7',],
       py_modules=['TelluricFitter',
                   'MakeModel',
                   'DataStructures',
@@ -354,5 +354,3 @@ setup(name='TelFit',
       setup_requires=['cython', 'requests', 'numpy>=1.6'],
       package_dir={'': 'src'}
 )
-
-
