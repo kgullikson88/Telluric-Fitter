@@ -1,0 +1,27 @@
+name: telfit3p8
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.8
+  - numpy
+  - scipy
+  - matplotlib
+  - astropy
+  - astroquery
+  - requests
+  - tqdm
+  - pandas
+  - bokeh # optional
+  - jupyter
+  - ipython
+  - cython
+  - nose
+  - pytables
+  - configobj
+  - lockfile
+  - fortranformat
+  - twine
+  - pip
+  - pip:
+    - pysynphot
