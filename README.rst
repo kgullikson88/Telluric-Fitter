@@ -8,8 +8,9 @@ please cite `my paper`_.
 
 Installation
 ------------
+**New for 2021:** Python 3 support!
 
-This code only runs on python 2, and is only tested on python 2.7. It requires the following packages:
+As of version `v1.4.0` TelFit now only runs on Python 3.  Python 2 support has been dropped, though it is technically still possible to install old Python 2 versions pre-`v1.4.0`.  The code has been tested on Python 3.7, and may work with other minor versions. Code installation requires the following packages:
 
   - matplotlib
   - **numpy v1.6 or greater**
