@@ -75,7 +75,7 @@ class TelluricFitter:
         :param debug: Flag to print a bunch of messages to screen for debugging purposes
         :param debug_level: An integer from 1-5 that controls how much gets printed. 1 is the least and 5 is the most.
         :param print_lblrtm_output: Show printouts from fortran (lblrtm) code
-        
+
         :return: An instance of TelluricFitter.
         """
         # Set up parameters
@@ -628,7 +628,7 @@ class TelluricFitter:
         :param model: A DataStructures.xypoint instance containing an un-broadened telluric model.
                       If given, it uses this instead of making one.
         :param air_wave: Set True of False to overwrite the air_wave saved under self. Default is None, which will use the self.air_wave attribute
-        
+
         :return:  The best-fit telluric model, as a DataStructures.xypoint instance where the x-axis is
                  sampled the same as the data (so you should be able to directly divide the two). If
                  separate_source = True, this method also returns the estimate for the source spectrum *before*
@@ -665,7 +665,7 @@ class TelluricFitter:
         wavenum_end = 1e7 / wavestart
         lat = self.observatory["latitude"]
         alt = self.observatory["altitude"]
-        
+
         # check if user overwrite MakeModel's output wavelength space
         if air_wave is not None:
             air_wave_overwrite = air_wave
@@ -692,7 +692,7 @@ class TelluricFitter:
             #  to go through MakeModel directly though...
             if data == None or nofit:
                 if broaden:
-                    model = FittingUtilities.ReduceResolution(model, resolution)
+                    model = FittingUtilities.ReduceResolution2(model, resolution)
 
                 # Give units to the output model
                 model.x *= u.nm.to(self.xunits)
@@ -704,7 +704,7 @@ class TelluricFitter:
         #Reduce to initial guess resolution
         if (resolution - 10 < self.resolution_bounds[0] or resolution + 10 > self.resolution_bounds[1]):
             resolution = np.mean(self.resolution_bounds)
-        model = FittingUtilities.ReduceResolution(model, resolution)
+        model = FittingUtilities.ReduceResolution2(model, resolution)
         model = FittingUtilities.RebinData(model, data.x)
 
         #Shift the data (or model) by a constant offset. This gets the wavelength calibration close
@@ -715,7 +715,7 @@ class TelluricFitter:
         elif self.adjust_wave == "model" and shift != 0:
             model_original.x -= shift
             # In this case, we need to adjust the resolution again
-            model = FittingUtilities.ReduceResolution(model_original.copy(), resolution)
+            model = FittingUtilities.ReduceResolution2(model_original.copy(), resolution)
             model = FittingUtilities.RebinData(model, data.x)
         elif shift != 0:
             sys.exit("Error! adjust_wave parameter set to invalid value: %s" % self.adjust_wave)
@@ -1116,7 +1116,7 @@ class TelluricFitter:
 
 
         logging.info("Optimal resolution found at R = {}".format(float(resolution)))
-        newmodel = FittingUtilities.ReduceResolution(newmodel, float(resolution))
+        newmodel = FittingUtilities.ReduceResolution2(newmodel, float(resolution))
         return FittingUtilities.RebinData(newmodel, data.x), float(resolution)
 
 
@@ -1134,7 +1134,7 @@ class TelluricFitter:
             logging.debug(" to Debug_ResFit.log and Debug_ResFit2.log")
             np.savetxt("Debug_ResFit.log", np.transpose((data.x, data.y, data.cont)))
             np.savetxt("Debug_Resfit2.log", np.transpose((model.x, model.y)))
-        newmodel = FittingUtilities.ReduceResolution(model, resolution, extend=False)
+        newmodel = FittingUtilities.ReduceResolution2(model, resolution, extend=False)
         newmodel = FittingUtilities.RebinData(newmodel, data.x, synphot=False)
 
         #Find the regions to use (ignoring the parts that were defined as bad)
