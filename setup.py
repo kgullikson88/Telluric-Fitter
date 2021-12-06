@@ -146,8 +146,9 @@ def gfortran_mode():
     # modify for lblrtm
     a_file = open("{}lblrtm/build/makefile.common".format(TELLURICMODELING), "r")
     list_of_lines = a_file.readlines()
-    list_of_lines[229] = '\tFCFLAG="-frecord-marker=4 -std=legacy" \\\n' # add -std=legacy
-    list_of_lines[342] = '\tFCFLAG="-frecord-marker=4 -std=legacy" \\\n' # add -std=legacy
+    list_of_lines[229] = '\tFCFLAG="-frecord-marker=4 -std=legacy" \\\n' # add -std=legacy for linux
+    list_of_lines[342] = '\tFCFLAG="-frecord-marker=4 -std=legacy" \\\n' # add -std=legacy for MacOS
+    list_of_lines[387] = '\tFCFLAG="-frecord-marker=4 -std=legacy" \\\n' # add -std=legacy for Windows
 
     a_file = open("{}lblrtm/build/makefile.common".format(TELLURICMODELING), "w")
     a_file.writelines(list_of_lines)
@@ -156,8 +157,9 @@ def gfortran_mode():
     # modify for lnfl
     a_file = open("{}lnfl/build/makefile.common".format(TELLURICMODELING), "r")
     list_of_lines = a_file.readlines()
-    list_of_lines[214] = '\tFCFLAG="-frecord-marker=4 -std=legacy" \\\n' # add -std=legacy
-    list_of_lines[327] = '\tFCFLAG="-frecord-marker=4 -std=legacy" \\\n' # add -std=legacy
+    list_of_lines[214] = '\tFCFLAG="-frecord-marker=4 -std=legacy" \\\n' # add -std=legacy for linux
+    list_of_lines[327] = '\tFCFLAG="-frecord-marker=4 -std=legacy" \\\n' # add -std=legacy for MacOS
+    list_of_lines[372] = '\tFCFLAG="-frecord-marker=4 -std=legacy" \\\n' # add -std=legacy for Windows
 
     a_file = open("{}lnfl/build/makefile.common".format(TELLURICMODELING), "w")
     a_file.writelines(list_of_lines)
