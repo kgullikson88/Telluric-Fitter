@@ -59,7 +59,7 @@ from numpy.polynomial import chebyshev
 from scipy.interpolate import UnivariateSpline
 from scipy.optimize import leastsq, fminbound
 from scipy.linalg import svd, diagsvd
-from scipy import mat
+from numpy import asmatrix as mat
 import matplotlib.pyplot as plt
 from astropy import units as u
 
