@@ -454,7 +454,7 @@ class TelluricFitter:
         self.air_wave = air_wave
 
         #Check if the user gave data to fit
-        if data != None:
+        if data is not None:
             self.ImportData(data)
         elif self.data == None:
             raise AttributeError("\n\nError! Must supply data to fit\n\n!")
