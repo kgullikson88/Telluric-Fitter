@@ -494,14 +494,14 @@ class Modeler:
             logging.info("All done! Output Transmission spectrum is located in the file below:\n\t\t{}".format(model_name))
 
             np.savetxt(model_name, np.transpose((wavelength[::-1], transmission[::-1])), fmt="%.8g")
-            if libfile != None:
+            if libfile is not None:
                 infile = open(libfile, "a")
                 infile.write(model_name + "\n")
                 infile.close()
 
         self.Cleanup()  #Un-lock the working directory
 
-        if wavegrid != None:
+        if wavegrid is not None:
             model = DataStructures.xypoint(x=wavelength[::-1], y=transmission[::-1])
             return FittingUtilities.RebinData(model, wavegrid)
 
@@ -555,7 +555,7 @@ class Modeler:
             v = np.r_[v, v2 + dv]
         logging.debug("v, spec size: {}, {} ", (v.size, spectrum.size))
 
-        if appendto != None and appendto[0].size > 0:
+        if appendto is not None and appendto[0].size > 0:
             old_v, old_spectrum = appendto[0], appendto[1]
             #Check for overlap (there shouldn't be any)
             last_v = old_v[-1]

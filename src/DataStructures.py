@@ -33,7 +33,7 @@ class xypoint:
              shape = (size,4). That is the shape returned by np.loadtxt
              with unpack=False.
         """
-        if array != None:
+        if array is not None:
             self.x = array[:, 0]
             self.y = array[:, 1]
             self.cont = array[:, 2]
