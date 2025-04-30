@@ -327,7 +327,7 @@ data_files.extend(example_files)
 
 
 setup(name='TelFit',
-      version='1.4.0',
+      version='1.4.1',
       author='Kevin Gullikson',
       author_email='kgulliks@astro.as.utexas.edu',
       url="https://telfit.readthedocs.io/",
