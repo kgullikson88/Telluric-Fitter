@@ -136,7 +136,7 @@ taken from a compilation of formulas for humidity, available `here`_ (hopefully)
     dew = dew[sorter]
 
     #Convert dew point temperature to ppmv
-    Pw = 6.116441 * 10**(7.591386*Temp/(Temp + 240.7263)) 
+    Pw = 6.116441 * 10**(7.591386*dew/(dew + 240.7263)) 
     h2o = Pw / (Pres-Pw) * 1e6
 
     #Unit conversion
